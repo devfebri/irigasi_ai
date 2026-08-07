@@ -1,0 +1,1690 @@
+﻿
+
+============================================================
+NOTEBOOK: 01_preprocessing_sensor.ipynb
+============================================================
+
+--- CELL 1 (code) ---
+# ============================================================
+# CELL 1: Import Library
+# ============================================================
+
+import sys
+print(sys.executable)
+
+%pip install seaborn sqlalchemy pymysql
+
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+from sqlalchemy import create_engine
+import warnings
+warnings.filterwarnings('ignore')
+
+# Pengaturan tampilan
+pd.set_option('display.max_columns', None)
+pd.set_option('display.float_format', '{:.4f}'.format)
+plt.style.use('seaborn-v0_8-whitegrid')
+
+print('Γ£à Library berhasil diimport')
+print(f'   - pandas  : {pd.__version__}')
+print(f'   - numpy   : {np.__version__}')
+
+--- CELL 2 (code) ---
+# ============================================================
+# CELL 2: Koneksi Database & Load Data
+# ============================================================
+engine = create_engine(
+    "mysql+pymysql://u832389661_unama1:Unama2026@153.92.15.62:3306/u832389661_unama1"
+)
+
+query = "SELECT * FROM sensor_readings ORDER BY waktu_pembacaan ASC"
+df_raw = pd.read_sql(query, engine)
+
+print('=== ≡ƒôè Informasi Data Mentah ===')
+print(f'Jumlah baris     : {df_raw.shape[0]:,}')
+print(f'Jumlah kolom     : {df_raw.shape[1]}')
+print(f'Periode data     : {df_raw["waktu_pembacaan"].min()} s.d. {df_raw["waktu_pembacaan"].max()}')
+print(f'Tipe data        :')
+print(df_raw.dtypes)
+
+--- CELL 3 (code) ---
+# ============================================================
+# CELL 3: Analisis Missing Values
+# ============================================================
+print('=== ≡ƒöì Analisis Missing Values ===')
+missing = df_raw.isnull().sum()
+missing_pct = (missing / len(df_raw) * 100).round(3)
+
+missing_df = pd.DataFrame({
+    'Jumlah_Missing': missing,
+    'Persentase(%)': missing_pct
+})
+print(missing_df[missing_df['Jumlah_Missing'] > 0])
+print(f'\nTotal kolom tanpa missing value: {(missing == 0).sum()}')
+
+--- CELL 4 (code) ---
+# ============================================================
+# CELL 4: Analisis Nilai Nol (Tidak Valid)
+# ============================================================
+print('=== ΓÜá∩╕Å  Analisis Nilai Nol (Berpotensi Tidak Valid) ===')
+sensor_cols = [
+    'kelembaban_tanah_1', 'kelembaban_tanah_2', 'kelembaban_tanah_3',
+    'kelembaban_udara_1', 'kelembaban_udara_2', 'kelembaban_udara_3',
+    'suhu_udara_1', 'suhu_udara_2', 'suhu_udara_3',
+    'tekanan_udara_1', 'tekanan_udara_2', 'tekanan_udara_3',
+    'curah_hujan'
+]
+
+zero_analysis = pd.DataFrame({
+    'Jumlah_Nol': (df_raw[sensor_cols] == 0).sum(),
+    'Persentase(%)': ((df_raw[sensor_cols] == 0).sum() / len(df_raw) * 100).round(3)
+})
+print(zero_analysis)
+
+print('\n=== ΓÜá∩╕Å  Analisis Nilai Negatif ===')
+for col in ['tekanan_udara_1', 'tekanan_udara_2', 'tekanan_udara_3']:
+    neg_count = (df_raw[col] < 0).sum()
+    print(f'{col}: {neg_count} nilai negatif')
+
+--- CELL 5 (code) ---
+# ============================================================
+# CELL 5: Visualisasi Distribusi Data Mentah
+# ============================================================
+fig, axes = plt.subplots(3, 3, figsize=(16, 12))
+fig.suptitle('≡ƒôè Distribusi Kelembaban Tanah & Sensor per Node', fontsize=14, fontweight='bold')
+
+target_cols = ['kelembaban_tanah_1', 'kelembaban_tanah_2', 'kelembaban_tanah_3']
+udara_cols  = ['kelembaban_udara_1', 'kelembaban_udara_2', 'kelembaban_udara_3']
+suhu_cols   = ['suhu_udara_1', 'suhu_udara_2', 'suhu_udara_3']
+
+colors = ['#2196F3', '#4CAF50', '#FF9800']
+for i, col in enumerate(target_cols):
+    axes[0, i].hist(df_raw[col], bins=50, color=colors[i], alpha=0.7, edgecolor='white')
+    axes[0, i].set_title(f'Kelembaban Tanah Node {i+1}', fontweight='bold')
+    axes[0, i].set_xlabel('Kelembaban (%)')
+
+for i, col in enumerate(udara_cols):
+    axes[1, i].hist(df_raw[col], bins=50, color=colors[i], alpha=0.7, edgecolor='white')
+    axes[1, i].set_title(f'Kelembaban Udara Node {i+1}', fontweight='bold')
+    axes[1, i].set_xlabel('Kelembaban (%)')
+
+for i, col in enumerate(suhu_cols):
+    axes[2, i].hist(df_raw[col], bins=50, color=colors[i], alpha=0.7, edgecolor='white')
+    axes[2, i].set_title(f'Suhu Udara Node {i+1}', fontweight='bold')
+    axes[2, i].set_xlabel('Suhu (┬░C)')
+
+plt.tight_layout()
+plt.savefig('dataset/plot_distribusi_raw.png', dpi=150, bbox_inches='tight')
+plt.show()
+print('Γ£à Plot disimpan ke dataset/plot_distribusi_raw.png')
+
+--- CELL 6 (code) ---
+# ============================================================
+# CELL 6: Cleaning Data
+# ============================================================
+
+df = df_raw.copy()
+
+print('=== ≡ƒº╣ Proses Cleaning Data ===')
+print(f'Baris awal: {len(df):,}')
+
+# ------------------------------------------------------------
+# 6a. Konversi waktu_pembacaan menjadi datetime
+# ------------------------------------------------------------
+df['waktu_pembacaan'] = pd.to_datetime(
+    df['waktu_pembacaan'],
+    errors='coerce'
+)
+
+# Hapus baris yang waktu_pembacaannya tidak valid
+jumlah_waktu_invalid = df['waktu_pembacaan'].isna().sum()
+
+if jumlah_waktu_invalid > 0:
+    print(
+        f'Waktu pembacaan tidak valid dan dihapus: '
+        f'{jumlah_waktu_invalid:,} baris'
+    )
+
+df = df.dropna(subset=['waktu_pembacaan'])
+
+# Urutkan berdasarkan waktu
+df = df.sort_values('waktu_pembacaan')
+
+# Jadikan waktu sebagai DatetimeIndex
+df = df.set_index('waktu_pembacaan')
+
+print(f'Tipe index: {type(df.index).__name__}')
+
+# ------------------------------------------------------------
+# 6b. Hapus kolom yang tidak dibutuhkan untuk ML
+# ------------------------------------------------------------
+drop_cols = [
+    'id',
+    'backup_status',
+    'created_at',
+    'updated_at'
+]
+
+# errors='ignore' mencegah error jika ada kolom yang tidak tersedia
+df = df.drop(columns=drop_cols, errors='ignore')
+
+print(f'Kolom dihapus: {drop_cols}')
+
+# ------------------------------------------------------------
+# 6c. Pastikan kolom sensor bertipe numerik
+# ------------------------------------------------------------
+sensor_cols = [
+    'sensor_tanah_adc_1',
+    'sensor_tanah_adc_2',
+    'sensor_tanah_adc_3',
+    'kelembaban_tanah_1',
+    'kelembaban_tanah_2',
+    'kelembaban_tanah_3',
+    'kelembaban_udara_1',
+    'kelembaban_udara_2',
+    'kelembaban_udara_3',
+    'tekanan_udara_1',
+    'tekanan_udara_2',
+    'tekanan_udara_3',
+    'suhu_udara_1',
+    'suhu_udara_2',
+    'suhu_udara_3',
+    'curah_hujan'
+]
+
+sensor_cols = [
+    col for col in sensor_cols
+    if col in df.columns
+]
+
+df[sensor_cols] = df[sensor_cols].apply(
+    pd.to_numeric,
+    errors='coerce'
+)
+
+# ------------------------------------------------------------
+# 6d. Hapus baris jika seluruh sensor kelembaban tanah = 0
+# ------------------------------------------------------------
+mask_semua_nol = (
+    (df['kelembaban_tanah_1'] == 0)
+    & (df['kelembaban_tanah_2'] == 0)
+    & (df['kelembaban_tanah_3'] == 0)
+)
+
+jumlah_semua_nol = int(mask_semua_nol.sum())
+
+print(
+    f'Baris semua sensor tanah = 0 dan dihapus: '
+    f'{jumlah_semua_nol:,}'
+)
+
+df = df.loc[~mask_semua_nol].copy()
+
+# ------------------------------------------------------------
+# 6e. Kelembaban tanah node 1 = 0
+#     Dianggap sensor tidak membaca, lalu diinterpolasi waktu
+# ------------------------------------------------------------
+df['kelembaban_tanah_1'] = (
+    df['kelembaban_tanah_1']
+    .replace(0, np.nan)
+)
+
+before_interp = int(
+    df['kelembaban_tanah_1'].isna().sum()
+
+
+--- CELL 7 (code) ---
+# ============================================================
+# CELL 7: Verifikasi Hasil Cleaning
+# ============================================================
+print('=== Γ£à Statistik Data Setelah Cleaning ===')
+print(df.describe().T[['mean', 'std', 'min', 'max']])
+
+--- CELL 8 (code) ---
+# ============================================================
+# CELL 8: Visualisasi Time Series Kelembaban Tanah
+# ============================================================
+fig, axes = plt.subplots(3, 1, figsize=(16, 10), sharex=True)
+fig.suptitle('≡ƒôê Time Series Kelembaban Tanah per Node (Setelah Cleaning)', 
+             fontsize=14, fontweight='bold')
+
+colors = ['#1565C0', '#2E7D32', '#E65100']
+for i, (col, color) in enumerate(zip(['kelembaban_tanah_1', 'kelembaban_tanah_2', 'kelembaban_tanah_3'], colors)):
+    axes[i].plot(df['waktu_pembacaan'], df[col], color=color, linewidth=0.5, alpha=0.8)
+    axes[i].set_ylabel('Kelembaban (%)', fontsize=10)
+    axes[i].set_title(f'Node {i+1} ΓÇô {col}', fontweight='bold')
+    axes[i].set_ylim(0, 105)
+    axes[i].axhline(y=60, color='red', linestyle='--', alpha=0.5, label='Threshold Kritis (60%)')
+    axes[i].legend(fontsize=8)
+
+axes[2].set_xlabel('Waktu Pembacaan', fontsize=10)
+plt.tight_layout()
+plt.savefig('dataset/plot_timeseries_cleaned.png', dpi=150, bbox_inches='tight')
+plt.show()
+print('Γ£à Plot disimpan ke dataset/plot_timeseries_cleaned.png')
+
+--- CELL 9 (code) ---
+# ============================================================
+# CELL 9: Simpan Dataset Bersih
+# ============================================================
+import os
+os.makedirs('dataset', exist_ok=True)
+
+df.to_csv('dataset/data_cleaned.csv', index=False)
+
+print('=== ≡ƒÆ╛ Dataset Bersih Tersimpan ===')
+print(f'File   : dataset/data_cleaned.csv')
+print(f'Baris  : {len(df):,}')
+print(f'Kolom  : {df.shape[1]}')
+print(f'Kolom  : {list(df.columns)}')
+print(f'Periode: {df["waktu_pembacaan"].min()} s.d. {df["waktu_pembacaan"].max()}')
+print()
+print('Γ£à Preprocessing selesai! Lanjut ke Notebook 02_preprocessing.ipynb')
+
+
+============================================================
+NOTEBOOK: 02_preprocessing.ipynb
+============================================================
+
+--- CELL 1 (code) ---
+# ============================================================
+# CELL 1: Import Library & Load Data Bersih
+# ============================================================
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+from sklearn.preprocessing import StandardScaler
+import warnings
+warnings.filterwarnings('ignore')
+
+pd.set_option('display.max_columns', None)
+plt.style.use('seaborn-v0_8-whitegrid')
+
+# Load data bersih
+df = pd.read_csv('dataset/data_cleaned.csv', parse_dates=['waktu_pembacaan'])
+df = df.sort_values('waktu_pembacaan').reset_index(drop=True)
+
+print('=== ≡ƒôé Data Bersih Dimuat ===')
+print(f'Baris  : {len(df):,}')
+print(f'Kolom  : {df.shape[1]}')
+print(df.head(3))
+
+--- CELL 2 (code) ---
+# ============================================================
+# CELL 2: Target Variable ΓÇô Rata-rata Kelembaban Tanah 3 Node
+# ============================================================
+# Target utama: rata-rata kelembaban tanah dari 3 node
+df['kelembaban_tanah_avg'] = df[['kelembaban_tanah_1',
+                                  'kelembaban_tanah_2',
+                                  'kelembaban_tanah_3']].mean(axis=1)
+
+# Target prediksi: nilai BERIKUTNYA (t+1) ΓåÆ time-series forecasting
+df['target_kelembaban_next'] = df['kelembaban_tanah_avg'].shift(-1)
+
+print('=== ≡ƒÄ» Target Variable ===')
+print(f'kelembaban_tanah_avg (saat ini)  : mean={df["kelembaban_tanah_avg"].mean():.2f}%')
+print(f'target_kelembaban_next (t+1)     : mean={df["target_kelembaban_next"].mean():.2f}%')
+print()
+print(df[['waktu_pembacaan', 'kelembaban_tanah_avg', 'target_kelembaban_next']].head(5))
+
+--- CELL 3 (code) ---
+# ============================================================
+# CELL 3: Feature Engineering ΓÇô Fitur Waktu
+# ============================================================
+print('=== ΓÅ░ Membuat Fitur Waktu ===')
+
+df['jam']         = df['waktu_pembacaan'].dt.hour
+df['menit']       = df['waktu_pembacaan'].dt.minute
+df['hari']        = df['waktu_pembacaan'].dt.day
+df['bulan']       = df['waktu_pembacaan'].dt.month
+df['hari_minggu'] = df['waktu_pembacaan'].dt.dayofweek  # 0=Senin, 6=Minggu
+df['is_weekend']  = (df['hari_minggu'] >= 5).astype(int)
+
+# Fitur siklus sinus/cosinus untuk jam (menghindari diskontinuitas 23ΓåÆ0)
+df['jam_sin'] = np.sin(2 * np.pi * df['jam'] / 24)
+df['jam_cos'] = np.cos(2 * np.pi * df['jam'] / 24)
+
+# Periode hari: pagi, siang, sore, malam
+df['periode_hari'] = pd.cut(df['jam'],
+                             bins=[-1, 5, 11, 17, 23],
+                             labels=[0, 1, 2, 3])  # 0=malam, 1=pagi, 2=siang, 3=sore
+df['periode_hari'] = df['periode_hari'].astype(int)
+
+print('Fitur waktu dibuat: jam, menit, hari, bulan, hari_minggu, is_weekend, jam_sin, jam_cos, periode_hari')
+
+--- CELL 4 (code) ---
+# ============================================================
+# CELL 4: Feature Engineering ΓÇô Lag Features
+# ============================================================
+print('=== ≡ƒôë Membuat Lag Features ===')
+
+# Lag pada kelembaban tanah rata-rata
+lag_steps = [1, 5, 10, 30, 60]
+for lag in lag_steps:
+    df[f'kt_avg_lag_{lag}'] = df['kelembaban_tanah_avg'].shift(lag)
+    print(f'  kt_avg_lag_{lag}: kelembaban rata-rata {lag} langkah sebelumnya')
+
+# Lag pada masing-masing node (hanya lag 1 dan lag 5 untuk efisiensi)
+for node in [1, 2, 3]:
+    col = f'kelembaban_tanah_{node}'
+    df[f'kt{node}_lag_1'] = df[col].shift(1)
+    df[f'kt{node}_lag_5'] = df[col].shift(5)
+
+# Lag curah hujan
+df['hujan_lag_1']  = df['curah_hujan'].shift(1)
+df['hujan_lag_5']  = df['curah_hujan'].shift(5)
+df['hujan_lag_30'] = df['curah_hujan'].shift(30)
+
+print('\nLag features selesai dibuat.')
+
+--- CELL 5 (code) ---
+# ============================================================
+# CELL 5: Feature Engineering ΓÇô Rolling Statistics
+# ============================================================
+print('=== ≡ƒôè Membuat Rolling Statistics ===')
+
+# Interval 1 menit ΓåÆ 1 jam = 60 langkah, 6 jam = 360 langkah
+windows = {'1jam': 60, '6jam': 360}
+
+for window_name, window_size in windows.items():
+    # Rolling mean kelembaban tanah
+    df[f'kt_avg_roll_mean_{window_name}'] = df['kelembaban_tanah_avg'].shift(1).rolling(window=window_size, min_periods=10).mean()
+    df[f'kt_avg_roll_std_{window_name}']  = df['kelembaban_tanah_avg'].shift(1).rolling(window=window_size, min_periods=10).std()
+    df[f'kt_avg_roll_min_{window_name}']  = df['kelembaban_tanah_avg'].shift(1).rolling(window=window_size, min_periods=10).min()
+    df[f'kt_avg_roll_max_{window_name}']  = df['kelembaban_tanah_avg'].shift(1).rolling(window=window_size, min_periods=10).max()
+    
+    # Rolling mean curah hujan
+    df[f'hujan_roll_sum_{window_name}'] = df['curah_hujan'].shift(1).rolling(window=window_size, min_periods=1).sum()
+    
+    print(f'  Rolling {window_name} ({window_size} langkah): mean, std, min, max KT + sum hujan')
+
+# Tren: selisih kelembaban dari t-1 ke sekarang
+df['kt_avg_diff_1']  = df['kelembaban_tanah_avg'].diff(1)
+df['kt_avg_diff_5']  = df['kelembaban_tanah_avg'].diff(5)
+df['kt_avg_diff_30'] = df['kelembaban_tanah_avg'].diff(30)
+
+print('\nRolling features selesai dibuat.')
+
+--- CELL 6 (code) ---
+# ============================================================
+# CELL 6: Feature Engineering ΓÇô Fitur Interaksi & Gabungan
+# ============================================================
+print('=== ≡ƒöù Membuat Fitur Interaksi ===')
+
+# Rata-rata kelembaban udara 3 node
+df['ku_avg'] = df[['kelembaban_udara_1', 'kelembaban_udara_2', 'kelembaban_udara_3']].mean(axis=1)
+
+# Rata-rata suhu udara 3 node
+df['suhu_avg'] = df[['suhu_udara_1', 'suhu_udara_2', 'suhu_udara_3']].mean(axis=1)
+
+# Rata-rata tekanan udara 3 node
+df['tekanan_avg'] = df[['tekanan_udara_1', 'tekanan_udara_2', 'tekanan_udara_3']].mean(axis=1)
+
+# Vapor Pressure Deficit (VPD) ΓÇô indikator evapotranspirasi
+# VPD Γëê (1 - RH/100) * 0.6108 * exp(17.27 * T / (T + 237.3))
+df['vpd_1'] = (1 - df['kelembaban_udara_1']/100) * 0.6108 * np.exp(17.27 * df['suhu_udara_1'] / (df['suhu_udara_1'] + 237.3))
+df['vpd_2'] = (1 - df['kelembaban_udara_2']/100) * 0.6108 * np.exp(17.27 * df['suhu_udara_2'] / (df['suhu_udara_2'] + 237.3))
+df['vpd_3'] = (1 - df['kelembaban_udara_3']/100) * 0.6108 * np.exp(17.27 * df['suhu_udara_3'] / (df['suhu_udara_3'] + 237.3))
+df['vpd_avg'] = df[['vpd_1', 'vpd_2', 'vpd_3']].mean(axis=1)
+
+# Perbedaan antar node (deteksi spatial variability)
+df['kt_diff_node12'] = df['kelembaban_tanah_1'] - df['kelembaban_tanah_2']
+df['kt_diff_node13'] = df['kelembaban_tanah_1'] - df['kelembaban_tanah_3']
+df['kt_diff_node23'] = df['kelembaban_tanah_2'] - df['kelembaban_tanah_3']
+
+print('Fitur interaksi: ku_avg, suhu_avg, tekanan_avg, vpd_1/2/3/avg, kt_diff_node12/13/23')
+
+--- CELL 7 (code) ---
+# ============================================================
+# CELL 7: Finalisasi Dataset & Hapus NaN dari Lag/Rolling
+# ============================================================
+print('=== ≡ƒöº Finalisasi Dataset ===')
+print(f'Baris sebelum drop NaN: {len(df):,}')
+
+# Hapus baris terakhir (target NaN karena shift(-1)) dan baris awal (lag NaN)
+df = df.dropna(subset=['target_kelembaban_next'])
+df = df.dropna()
+
+print(f'Baris setelah drop NaN : {len(df):,}')
+print(f'Jumlah fitur total     : {df.shape[1]}')
+
+# Daftar semua fitur
+exclude_cols = ['waktu_pembacaan', 'target_kelembaban_next']
+feature_cols = [c for c in df.columns if c not in exclude_cols]
+print(f'\nJumlah fitur untuk model: {len(feature_cols)}')
+print(f'Fitur: {feature_cols}')
+
+--- CELL 8 (code) ---
+# ============================================================
+# CELL 8: Korelasi Fitur dengan Target
+# ============================================================
+print('=== ≡ƒöì Korelasi Fitur dengan Target ===')
+
+corr_with_target = df[feature_cols + ['target_kelembaban_next']].corr()['target_kelembaban_next'].drop('target_kelembaban_next')
+corr_sorted = corr_with_target.abs().sort_values(ascending=False)
+
+print('Top 20 fitur berkorelasi tertinggi dengan target:')
+print(corr_sorted.head(20).to_string())
+
+# Visualisasi
+fig, ax = plt.subplots(figsize=(10, 12))
+top20 = corr_sorted.head(20)
+colors_bar = ['#1976D2' if corr_with_target[f] > 0 else '#D32F2F' for f in top20.index]
+bars = ax.barh(top20.index[::-1], top20.values[::-1], color=colors_bar[::-1])
+ax.set_xlabel('|Korelasi| dengan Target Kelembaban t+1', fontsize=11)
+ax.set_title('Top 20 Fitur ΓÇô Korelasi dengan Target', fontsize=13, fontweight='bold')
+ax.set_xlim(0, 1.0)
+for bar, val in zip(bars, top20.values[::-1]):
+    ax.text(val + 0.01, bar.get_y() + bar.get_height()/2, f'{val:.3f}', va='center', fontsize=8)
+plt.tight_layout()
+plt.savefig('dataset/plot_korelasi_fitur.png', dpi=150, bbox_inches='tight')
+plt.show()
+
+--- CELL 9 (code) ---
+# ============================================================
+# CELL 9: Train/Test Split Kronologis (80/20)
+# ============================================================
+print('=== Γ£é∩╕Å  Train/Test Split Kronologis 80/20 ===')
+
+split_idx = int(len(df) * 0.8)
+df_train  = df.iloc[:split_idx].copy()
+df_test   = df.iloc[split_idx:].copy()
+
+print(f'Data training : {len(df_train):,} baris ({df_train["waktu_pembacaan"].min()} s.d. {df_train["waktu_pembacaan"].max()})')
+print(f'Data testing  : {len(df_test):,} baris ({df_test["waktu_pembacaan"].min()} s.d. {df_test["waktu_pembacaan"].max()})')
+
+# Visualisasi split
+fig, ax = plt.subplots(figsize=(16, 4))
+ax.plot(df_train['waktu_pembacaan'], df_train['target_kelembaban_next'],
+        color='#1565C0', linewidth=0.5, label=f'Training ({len(df_train):,} data)')
+ax.plot(df_test['waktu_pembacaan'], df_test['target_kelembaban_next'],
+        color='#E65100', linewidth=0.5, label=f'Testing ({len(df_test):,} data)')
+ax.axvline(x=df_test['waktu_pembacaan'].min(), color='black', linestyle='--', alpha=0.7)
+ax.set_title('Train/Test Split ΓÇô Target Kelembaban Tanah t+1', fontsize=13, fontweight='bold')
+ax.set_xlabel('Waktu')
+ax.set_ylabel('Kelembaban Tanah Avg (%)')
+ax.legend()
+plt.tight_layout()
+plt.savefig('dataset/plot_train_test_split.png', dpi=150, bbox_inches='tight')
+plt.show()
+
+--- CELL 10 (code) ---
+# ============================================================
+# CELL 10: Simpan Dataset Fitur
+# ============================================================
+import os
+os.makedirs('models', exist_ok=True)
+
+# Simpan daftar kolom fitur
+import json
+with open('models/feature_cols.json', 'w') as f:
+    json.dump(feature_cols, f, indent=2)
+
+# Simpan dataset lengkap dengan fitur
+df.to_csv('dataset/data_features.csv', index=False)
+df_train.to_csv('dataset/data_train.csv', index=False)
+df_test.to_csv('dataset/data_test.csv', index=False)
+
+print('=== ≡ƒÆ╛ Dataset Fitur Tersimpan ===')
+print(f'data_features.csv : {len(df):,} baris, {len(feature_cols)} fitur')
+print(f'data_train.csv    : {len(df_train):,} baris')
+print(f'data_test.csv     : {len(df_test):,} baris')
+print(f'feature_cols.json : {len(feature_cols)} fitur')
+print()
+print('Γ£à Feature Engineering selesai! Lanjut ke Notebook 03_random_forest.ipynb')
+
+
+============================================================
+NOTEBOOK: 03_random_forest.ipynb
+============================================================
+
+--- CELL 1 (code) ---
+# ============================================================
+# CELL 1: Import Library
+# ============================================================
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+import json
+import pickle
+import os
+import warnings
+warnings.filterwarnings('ignore')
+
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
+from sklearn.inspection import permutation_importance
+
+plt.style.use('seaborn-v0_8-whitegrid')
+os.makedirs('models', exist_ok=True)
+
+print('Γ£à Library berhasil diimport')
+
+--- CELL 2 (code) ---
+# ============================================================
+# CELL 2: Load Data & Feature Columns
+# ============================================================
+df_train = pd.read_csv('dataset/data_train.csv', parse_dates=['waktu_pembacaan'])
+df_test  = pd.read_csv('dataset/data_test.csv',  parse_dates=['waktu_pembacaan'])
+
+with open('models/feature_cols.json') as f:
+    feature_cols = json.load(f)
+
+TARGET = 'target_kelembaban_next'
+
+X_train = df_train[feature_cols]
+y_train = df_train[TARGET]
+X_test  = df_test[feature_cols]
+y_test  = df_test[TARGET]
+
+print('=== ≡ƒôé Data Dimuat ===')
+print(f'X_train : {X_train.shape}')
+print(f'X_test  : {X_test.shape}')
+print(f'Fitur   : {len(feature_cols)}')
+print(f'Target  : {TARGET}')
+print(f'y_train : mean={y_train.mean():.2f}%, std={y_train.std():.2f}%')
+print(f'y_test  : mean={y_test.mean():.2f}%, std={y_test.std():.2f}%')
+
+--- CELL 3 (code) ---
+# ============================================================
+# CELL 3: Training Random Forest ΓÇô Model Baseline
+# ============================================================
+print('=== ≡ƒî▓ Melatih Random Forest Regressor ===')
+print('Parameter: n_estimators=200, max_depth=20, min_samples_leaf=5')
+print('Mohon tunggu...')
+
+rf_model = RandomForestRegressor(
+    n_estimators   = 200,      # 200 pohon
+    max_depth      = 20,       # kedalaman max pohon
+    min_samples_leaf = 5,      # min sampel di leaf
+    max_features   = 'sqrt',   # sqrt(n_features) per split
+    n_jobs         = -1,       # pakai semua CPU core
+    random_state   = 42,
+    oob_score      = True      # Out-of-Bag score untuk validasi internal
+)
+
+rf_model.fit(X_train, y_train)
+
+print(f'\nΓ£à Training selesai!')
+print(f'OOB Score (R┬▓): {rf_model.oob_score_:.4f}')
+
+--- CELL 4 (code) ---
+# ============================================================
+# CELL 4: Prediksi & Evaluasi Metrik
+# ============================================================
+y_pred_train = rf_model.predict(X_train)
+y_pred_test  = rf_model.predict(X_test)
+
+def evaluasi_model(y_true, y_pred, nama_set):
+    mae  = mean_absolute_error(y_true, y_pred)
+    rmse = np.sqrt(mean_squared_error(y_true, y_pred))
+    r2   = r2_score(y_true, y_pred)
+    mape = np.mean(np.abs((y_true - y_pred) / (y_true + 1e-8))) * 100
+    print(f'--- {nama_set} ---')
+    print(f'  MAE  : {mae:.4f}%')
+    print(f'  RMSE : {rmse:.4f}%')
+    print(f'  R┬▓   : {r2:.4f}')
+    print(f'  MAPE : {mape:.4f}%')
+    return {'MAE': mae, 'RMSE': rmse, 'R2': r2, 'MAPE': mape}
+
+print('=== ≡ƒôÅ Evaluasi Model Random Forest ===')
+rf_train_metrics = evaluasi_model(y_train, y_pred_train, 'Training')
+print()
+rf_test_metrics  = evaluasi_model(y_test,  y_pred_test,  'Testing')
+
+# Simpan hasil metrik
+rf_metrics = {'train': rf_train_metrics, 'test': rf_test_metrics}
+with open('models/rf_metrics.json', 'w') as f:
+    json.dump(rf_metrics, f, indent=2)
+print('\nΓ£à Metrik disimpan ke models/rf_metrics.json')
+
+--- CELL 5 (code) ---
+# ============================================================
+# CELL 5: Visualisasi Prediksi vs Aktual
+# ============================================================
+fig, axes = plt.subplots(2, 1, figsize=(16, 10))
+fig.suptitle('≡ƒî▓ Random Forest ΓÇô Prediksi vs Aktual Kelembaban Tanah', fontsize=14, fontweight='bold')
+
+# Plot Time Series (200 sampel terakhir dari test set untuk kejelasan)
+n_plot = 500
+idx_plot = range(len(y_test) - n_plot, len(y_test))
+waktu_plot = df_test['waktu_pembacaan'].values[-n_plot:]
+
+axes[0].plot(waktu_plot, y_test.values[-n_plot:],
+             color='#1565C0', linewidth=1.2, label='Aktual', alpha=0.9)
+axes[0].plot(waktu_plot, y_pred_test[-n_plot:],
+             color='#E65100', linewidth=1.2, linestyle='--', label='Prediksi RF', alpha=0.9)
+axes[0].set_title(f'Time Series ΓÇô 500 Sampel Terakhir (MAE={rf_test_metrics["MAE"]:.3f}%, R┬▓={rf_test_metrics["R2"]:.4f})',
+                   fontsize=11)
+axes[0].set_ylabel('Kelembaban Tanah Avg (%)')
+axes[0].legend()
+
+# Scatter plot aktual vs prediksi
+axes[1].scatter(y_test, y_pred_test, alpha=0.3, s=5, color='#1976D2')
+min_val = min(y_test.min(), y_pred_test.min())
+max_val = max(y_test.max(), y_pred_test.max())
+axes[1].plot([min_val, max_val], [min_val, max_val], 'r--', linewidth=2, label='Prediksi Sempurna')
+axes[1].set_xlabel('Aktual (%)')
+axes[1].set_ylabel('Prediksi (%)')
+axes[1].set_title('Scatter Plot: Aktual vs Prediksi')
+axes[1].legend()
+
+plt.tight_layout()
+plt.savefig('dataset/plot_rf_prediksi.png', dpi=150, bbox_inches='tight')
+plt.show()
+print('Γ£à Plot disimpan ke dataset/plot_rf_prediksi.png')
+
+--- CELL 6 (code) ---
+# ============================================================
+# CELL 6: Feature Importance Random Forest
+# ============================================================
+print('=== ≡ƒöæ Feature Importance Random Forest ===')
+
+importances = pd.Series(rf_model.feature_importances_, index=feature_cols)
+importances = importances.sort_values(ascending=False)
+top_n = 25
+
+print(f'Top {top_n} Fitur Terpenting:')
+print(importances.head(top_n).to_string())
+
+fig, ax = plt.subplots(figsize=(10, 10))
+colors_fi = plt.cm.RdYlGn(np.linspace(0.3, 0.9, top_n))
+bars = ax.barh(importances.head(top_n).index[::-1],
+               importances.head(top_n).values[::-1],
+               color=colors_fi)
+ax.set_xlabel('Feature Importance (Gini)', fontsize=11)
+ax.set_title(f'≡ƒî▓ Random Forest ΓÇô Top {top_n} Feature Importance', fontsize=13, fontweight='bold')
+for bar, val in zip(bars, importances.head(top_n).values[::-1]):
+    ax.text(val + 0.001, bar.get_y() + bar.get_height()/2,
+            f'{val:.4f}', va='center', fontsize=8)
+plt.tight_layout()
+plt.savefig('dataset/plot_rf_feature_importance.png', dpi=150, bbox_inches='tight')
+plt.show()
+print('Γ£à Plot disimpan ke dataset/plot_rf_feature_importance.png')
+
+--- CELL 7 (code) ---
+# ============================================================
+# CELL 7: Analisis Residual
+# ============================================================
+residuals = y_test.values - y_pred_test
+
+fig, axes = plt.subplots(1, 2, figsize=(14, 5))
+fig.suptitle('≡ƒî▓ Random Forest ΓÇô Analisis Residual', fontsize=13, fontweight='bold')
+
+axes[0].hist(residuals, bins=60, color='#1976D2', alpha=0.7, edgecolor='white')
+axes[0].axvline(0, color='red', linestyle='--')
+axes[0].set_xlabel('Residual (Aktual - Prediksi)')
+axes[0].set_ylabel('Frekuensi')
+axes[0].set_title(f'Distribusi Residual\nMean={residuals.mean():.4f}, Std={residuals.std():.4f}')
+
+axes[1].scatter(y_pred_test, residuals, alpha=0.2, s=5, color='#E65100')
+axes[1].axhline(0, color='red', linestyle='--')
+axes[1].set_xlabel('Prediksi (%)')
+axes[1].set_ylabel('Residual')
+axes[1].set_title('Residual vs Prediksi')
+
+plt.tight_layout()
+plt.savefig('dataset/plot_rf_residual.png', dpi=150, bbox_inches='tight')
+plt.show()
+
+--- CELL 8 (code) ---
+# ============================================================
+# CELL 8: Simpan Model Random Forest
+# ============================================================
+with open('models/rf_model.pkl', 'wb') as f:
+    pickle.dump(rf_model, f)
+
+# Simpan prediksi test
+df_pred_rf = df_test[['waktu_pembacaan', TARGET]].copy()
+df_pred_rf['prediksi_rf'] = y_pred_test
+df_pred_rf['residual_rf'] = y_test.values - y_pred_test
+df_pred_rf.to_csv('dataset/prediksi_rf.csv', index=False)
+
+print('=== ≡ƒÆ╛ Model & Hasil Disimpan ===')
+print(f'Model  : models/rf_model.pkl')
+print(f'Metrik : models/rf_metrics.json')
+print(f'Prediksi: dataset/prediksi_rf.csv')
+print()
+print('=== ≡ƒôï Ringkasan Performa Random Forest ===')
+print(f'  MAE  (Test): {rf_test_metrics["MAE"]:.4f}%')
+print(f'  RMSE (Test): {rf_test_metrics["RMSE"]:.4f}%')
+print(f'  R┬▓   (Test): {rf_test_metrics["R2"]:.4f}')
+print(f'  MAPE (Test): {rf_test_metrics["MAPE"]:.4f}%')
+print()
+print('Γ£à Random Forest selesai! Lanjut ke Notebook 04_xgboost.ipynb')
+
+
+============================================================
+NOTEBOOK: 04_xgboost.ipynb
+============================================================
+
+--- CELL 1 (code) ---
+# ============================================================
+# CELL 1: Import Library
+# ============================================================
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+import json
+import pickle
+import os
+import warnings
+warnings.filterwarnings('ignore')
+
+import xgboost as xgb
+from xgboost import XGBRegressor
+from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
+from sklearn.model_selection import GridSearchCV, TimeSeriesSplit
+
+plt.style.use('seaborn-v0_8-whitegrid')
+os.makedirs('models', exist_ok=True)
+
+print(f'Γ£à Library berhasil diimport')
+print(f'   XGBoost version: {xgb.__version__}')
+
+--- CELL 2 (code) ---
+# ============================================================
+# CELL 2: Load Data & Feature Columns
+# ============================================================
+df_train = pd.read_csv('dataset/data_train.csv', parse_dates=['waktu_pembacaan'])
+df_test  = pd.read_csv('dataset/data_test.csv',  parse_dates=['waktu_pembacaan'])
+
+with open('models/feature_cols.json') as f:
+    feature_cols = json.load(f)
+
+TARGET = 'target_kelembaban_next'
+
+X_train = df_train[feature_cols]
+y_train = df_train[TARGET]
+X_test  = df_test[feature_cols]
+y_test  = df_test[TARGET]
+
+print('=== ≡ƒôé Data Dimuat ===')
+print(f'X_train : {X_train.shape}')
+print(f'X_test  : {X_test.shape}')
+print(f'Target  : {TARGET}')
+
+--- CELL 3 (code) ---
+# ============================================================
+# CELL 3: XGBoost ΓÇô Training Awal (Default Params)
+# ============================================================
+print('=== ΓÜí XGBoost ΓÇô Training Awal (Baseline) ===')
+
+xgb_base = XGBRegressor(
+    n_estimators    = 500,
+    learning_rate   = 0.05,
+    max_depth       = 8,
+    subsample       = 0.8,
+    colsample_bytree= 0.8,
+    min_child_weight= 5,
+    reg_alpha       = 0.1,
+    reg_lambda      = 1.0,
+    random_state    = 42,
+    n_jobs          = -1,
+    early_stopping_rounds = 30,
+    eval_metric     = 'rmse'
+)
+
+xgb_base.fit(
+    X_train, y_train,
+    eval_set=[(X_train, y_train), (X_test, y_test)],
+    verbose=50
+)
+
+best_iter = xgb_base.best_iteration
+print(f'\nΓ£à Training selesai! Best iteration: {best_iter}')
+
+--- CELL 4 (code) ---
+# ============================================================
+# CELL 4: Plot Learning Curve XGBoost
+# ============================================================
+results = xgb_base.evals_result()
+train_rmse = results['validation_0']['rmse']
+test_rmse  = results['validation_1']['rmse']
+
+fig, ax = plt.subplots(figsize=(12, 5))
+ax.plot(train_rmse, color='#1565C0', linewidth=1.5, label='Training RMSE')
+ax.plot(test_rmse,  color='#E65100', linewidth=1.5, label='Testing RMSE')
+ax.axvline(x=best_iter, color='green', linestyle='--', alpha=0.7, label=f'Best Iter ({best_iter})')
+ax.set_xlabel('Boosting Round')
+ax.set_ylabel('RMSE')
+ax.set_title('ΓÜí XGBoost ΓÇô Learning Curve (RMSE)', fontsize=13, fontweight='bold')
+ax.legend()
+plt.tight_layout()
+plt.savefig('dataset/plot_xgb_learning_curve.png', dpi=150, bbox_inches='tight')
+plt.show()
+print('Γ£à Learning curve disimpan')
+
+--- CELL 5 (code) ---
+# ============================================================
+# CELL 5: Evaluasi XGBoost Baseline
+# ============================================================
+y_pred_train_base = xgb_base.predict(X_train)
+y_pred_test_base  = xgb_base.predict(X_test)
+
+def evaluasi_model(y_true, y_pred, nama_set):
+    mae  = mean_absolute_error(y_true, y_pred)
+    rmse = np.sqrt(mean_squared_error(y_true, y_pred))
+    r2   = r2_score(y_true, y_pred)
+    mape = np.mean(np.abs((y_true - y_pred) / (y_true + 1e-8))) * 100
+    print(f'--- {nama_set} ---')
+    print(f'  MAE  : {mae:.4f}%')
+    print(f'  RMSE : {rmse:.4f}%')
+    print(f'  R┬▓   : {r2:.4f}')
+    print(f'  MAPE : {mape:.4f}%')
+    return {'MAE': mae, 'RMSE': rmse, 'R2': r2, 'MAPE': mape}
+
+print('=== ≡ƒôÅ Evaluasi XGBoost Baseline ===')
+xgb_train_metrics = evaluasi_model(y_train, y_pred_train_base, 'Training')
+print()
+xgb_test_metrics  = evaluasi_model(y_test,  y_pred_test_base,  'Testing')
+
+--- CELL 6 (code) ---
+# ============================================================
+# CELL 6: Hyperparameter Tuning ΓÇô GridSearchCV dengan TimeSeriesSplit
+# ============================================================
+print('=== ≡ƒöº Hyperparameter Tuning XGBoost ===')
+print('Menggunakan TimeSeriesSplit (5-fold) untuk menghormati urutan waktu...')
+print('Proses ini mungkin memakan waktu 5-15 menit...\n')
+
+# TimeSeriesSplit untuk data time-series (TIDAK menggunakan shuffle)
+tscv = TimeSeriesSplit(n_splits=5)
+
+param_grid = {
+    'n_estimators'    : [300, 500],
+    'max_depth'       : [6, 8, 10],
+    'learning_rate'   : [0.03, 0.05, 0.1],
+    'subsample'       : [0.7, 0.8],
+    'min_child_weight': [3, 5]
+}
+
+xgb_cv = XGBRegressor(
+    colsample_bytree = 0.8,
+    reg_alpha        = 0.1,
+    reg_lambda       = 1.0,
+    random_state     = 42,
+    n_jobs           = -1,
+    eval_metric      = 'rmse'
+)
+
+grid_search = GridSearchCV(
+    estimator  = xgb_cv,
+    param_grid = param_grid,
+    cv         = tscv,
+    scoring    = 'neg_root_mean_squared_error',
+    n_jobs     = -1,
+    verbose    = 1
+)
+
+grid_search.fit(X_train, y_train)
+
+print(f'\nΓ£à Tuning selesai!')
+print(f'Best RMSE (CV): {-grid_search.best_score_:.4f}')
+print(f'Best Params   :')
+for k, v in grid_search.best_params_.items():
+    print(f'  {k}: {v}')
+
+--- CELL 7 (code) ---
+# ============================================================
+# CELL 7: Training XGBoost dengan Parameter Terbaik
+# ============================================================
+print('=== ΓÜí Training XGBoost ΓÇô Parameter Terbaik ===')
+
+best_params = grid_search.best_params_
+
+xgb_best = XGBRegressor(
+    **best_params,
+    colsample_bytree      = 0.8,
+    reg_alpha             = 0.1,
+    reg_lambda            = 1.0,
+    random_state          = 42,
+    n_jobs                = -1,
+    early_stopping_rounds = 30,
+    eval_metric           = 'rmse'
+)
+
+xgb_best.fit(
+    X_train, y_train,
+    eval_set=[(X_train, y_train), (X_test, y_test)],
+    verbose=50
+)
+
+print(f'\nΓ£à Training selesai! Best iteration: {xgb_best.best_iteration}')
+
+--- CELL 9 (code) ---
+# ============================================================
+# CELL 8: Evaluasi Model Terbaik
+# ============================================================
+y_pred_train = xgb_best.predict(X_train)
+y_pred_test  = xgb_best.predict(X_test)
+
+print('=== ≡ƒôÅ Evaluasi XGBoost ΓÇô Parameter Terbaik ===')
+xgb_train_metrics_best = evaluasi_model(y_train, y_pred_train, 'Training (Best)')
+print()
+xgb_test_metrics_best  = evaluasi_model(y_test,  y_pred_test,  'Testing (Best)')
+
+# Simpan metrik
+xgb_metrics = {
+    'baseline': {'train': xgb_train_metrics, 'test': xgb_test_metrics},
+    'tuned'   : {'train': xgb_train_metrics_best, 'test': xgb_test_metrics_best},
+    'best_params': best_params
+}
+with open('models/xgb_metrics.json', 'w') as f:
+    json.dump(xgb_metrics, f, indent=2)
+print('\nΓ£à Metrik disimpan ke models/xgb_metrics.json')
+
+--- CELL 11 (code) ---
+# ============================================================
+# CELL 9: Visualisasi Prediksi vs Aktual ΓÇô XGBoost
+# ============================================================
+fig, axes = plt.subplots(2, 1, figsize=(16, 10))
+fig.suptitle('ΓÜí XGBoost ΓÇô Prediksi vs Aktual Kelembaban Tanah', fontsize=14, fontweight='bold')
+
+n_plot = 500
+waktu_plot = df_test['waktu_pembacaan'].values[-n_plot:]
+
+axes[0].plot(waktu_plot, y_test.values[-n_plot:],
+             color='#1565C0', linewidth=1.2, label='Aktual', alpha=0.9)
+axes[0].plot(waktu_plot, y_pred_test[-n_plot:],
+             color='#43A047', linewidth=1.2, linestyle='--', label='Prediksi XGBoost', alpha=0.9)
+axes[0].set_title(f'Time Series ΓÇô 500 Sampel Terakhir (MAE={xgb_test_metrics_best["MAE"]:.3f}%, R┬▓={xgb_test_metrics_best["R2"]:.4f})',
+                   fontsize=11)
+axes[0].set_ylabel('Kelembaban Tanah Avg (%)')
+axes[0].legend()
+
+axes[1].scatter(y_test, y_pred_test, alpha=0.3, s=5, color='#43A047')
+min_val = min(y_test.min(), y_pred_test.min())
+max_val = max(y_test.max(), y_pred_test.max())
+axes[1].plot([min_val, max_val], [min_val, max_val], 'r--', linewidth=2, label='Prediksi Sempurna')
+axes[1].set_xlabel('Aktual (%)')
+axes[1].set_ylabel('Prediksi (%)')
+axes[1].set_title('Scatter Plot: Aktual vs Prediksi')
+axes[1].legend()
+
+plt.tight_layout()
+plt.savefig('dataset/plot_xgb_prediksi.png', dpi=150, bbox_inches='tight')
+plt.show()
+print('Γ£à Plot disimpan ke dataset/plot_xgb_prediksi.png')
+
+--- CELL 13 (code) ---
+# ============================================================
+# CELL 10: Feature Importance XGBoost
+# ============================================================
+print('=== ≡ƒöæ Feature Importance XGBoost ===')
+
+importances_xgb = pd.Series(
+    xgb_best.feature_importances_,
+    index=feature_cols
+).sort_values(ascending=False)
+
+top_n = 25
+print(f'Top {top_n} Fitur Terpenting:')
+print(importances_xgb.head(top_n).to_string())
+
+fig, ax = plt.subplots(figsize=(10, 10))
+colors_fi = plt.cm.YlOrRd(np.linspace(0.3, 0.9, top_n))
+bars = ax.barh(importances_xgb.head(top_n).index[::-1],
+               importances_xgb.head(top_n).values[::-1],
+               color=colors_fi)
+ax.set_xlabel('Feature Importance (Gain)', fontsize=11)
+ax.set_title(f'ΓÜí XGBoost ΓÇô Top {top_n} Feature Importance', fontsize=13, fontweight='bold')
+for bar, val in zip(bars, importances_xgb.head(top_n).values[::-1]):
+    ax.text(val + 0.001, bar.get_y() + bar.get_height()/2,
+            f'{val:.4f}', va='center', fontsize=8)
+plt.tight_layout()
+plt.savefig('dataset/plot_xgb_feature_importance.png', dpi=150, bbox_inches='tight')
+plt.show()
+print('Γ£à Plot disimpan ke dataset/plot_xgb_feature_importance.png')
+
+--- CELL 15 (code) ---
+# ============================================================
+# CELL 11: Simpan Model XGBoost
+# ============================================================
+# Simpan dengan pickle
+with open('models/xgb_model.pkl', 'wb') as f:
+    pickle.dump(xgb_best, f)
+
+# Simpan dengan format native XGBoost (lebih stabil untuk deployment)
+xgb_best.save_model('models/xgb_model.json')
+
+# Simpan prediksi test
+df_pred_xgb = df_test[['waktu_pembacaan', TARGET]].copy()
+df_pred_xgb['prediksi_xgb'] = y_pred_test
+df_pred_xgb['residual_xgb'] = y_test.values - y_pred_test
+df_pred_xgb.to_csv('dataset/prediksi_xgb.csv', index=False)
+
+print('=== ≡ƒÆ╛ Model & Hasil Disimpan ===')
+print(f'Model (pkl) : models/xgb_model.pkl')
+print(f'Model (json): models/xgb_model.json')
+print(f'Metrik      : models/xgb_metrics.json')
+print(f'Prediksi    : dataset/prediksi_xgb.csv')
+print()
+print('=== ≡ƒôï Ringkasan Performa XGBoost (Tuned) ===')
+print(f'  MAE  (Test): {xgb_test_metrics_best["MAE"]:.4f}%')
+print(f'  RMSE (Test): {xgb_test_metrics_best["RMSE"]:.4f}%')
+print(f'  R┬▓   (Test): {xgb_test_metrics_best["R2"]:.4f}')
+print(f'  MAPE (Test): {xgb_test_metrics_best["MAPE"]:.4f}%')
+print()
+print('Γ£à XGBoost selesai! Lanjut ke Notebook 05_evaluasi_model.ipynb')
+
+
+============================================================
+NOTEBOOK: 05_evaluasi_model.ipynb
+============================================================
+
+--- CELL 1 (code) ---
+# ============================================================
+# CELL 1: Import Library & Load Semua Hasil
+# ============================================================
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import matplotlib.gridspec as gridspec
+import seaborn as sns
+import json
+import pickle
+import warnings
+warnings.filterwarnings('ignore')
+
+from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
+
+plt.style.use('seaborn-v0_8-whitegrid')
+plt.rcParams['figure.dpi'] = 120
+
+# ---- Load data prediksi ----
+df_test    = pd.read_csv('dataset/data_test.csv', parse_dates=['waktu_pembacaan'])
+df_pred_rf = pd.read_csv('dataset/prediksi_rf.csv',  parse_dates=['waktu_pembacaan'])
+df_pred_xgb= pd.read_csv('dataset/prediksi_xgb.csv', parse_dates=['waktu_pembacaan'])
+
+# ---- Load metrik tersimpan ----
+with open('models/rf_metrics.json')  as f: rf_metrics  = json.load(f)
+with open('models/xgb_metrics.json') as f: xgb_metrics = json.load(f)
+
+TARGET = 'target_kelembaban_next'
+y_test     = df_test[TARGET]
+y_pred_rf  = df_pred_rf['prediksi_rf'].values
+y_pred_xgb = df_pred_xgb['prediksi_xgb'].values
+
+print('=== Γ£à Data & Metrik Berhasil Dimuat ===')
+print(f'Data test  : {len(df_test):,} baris')
+print(f'RF metrik  : {rf_metrics["test"]}')
+print(f'XGB metrik : {xgb_metrics["tuned"]["test"]}')
+
+--- CELL 3 (code) ---
+# ============================================================
+# CELL 2: Tabel Perbandingan Metrik
+# ============================================================
+print('=== ≡ƒôè Perbandingan Metrik ΓÇô Random Forest vs XGBoost ===')
+
+metrics_comparison = pd.DataFrame({
+    'Metrik'  : ['MAE (%)', 'RMSE (%)', 'R┬▓', 'MAPE (%)'],
+    'Random Forest (Baseline)': [
+        rf_metrics['test']['MAE'],
+        rf_metrics['test']['RMSE'],
+        rf_metrics['test']['R2'],
+        rf_metrics['test']['MAPE']
+    ],
+    'XGBoost (Optimasi)': [
+        xgb_metrics['tuned']['test']['MAE'],
+        xgb_metrics['tuned']['test']['RMSE'],
+        xgb_metrics['tuned']['test']['R2'],
+        xgb_metrics['tuned']['test']['MAPE']
+    ]
+})
+
+# Tandai model terbaik per metrik
+metrics_comparison['Model Terbaik'] = metrics_comparison.apply(
+    lambda row: 'Random Forest' if (
+        (row['Metrik'] == 'R┬▓' and row['Random Forest (Baseline)'] > row['XGBoost (Optimasi)'])
+        or (row['Metrik'] != 'R┬▓' and row['Random Forest (Baseline)'] < row['XGBoost (Optimasi)'])
+    ) else 'XGBoost', axis=1
+)
+
+metrics_comparison = metrics_comparison.set_index('Metrik')
+metrics_comparison['Random Forest (Baseline)'] = metrics_comparison['Random Forest (Baseline)'].round(4)
+metrics_comparison['XGBoost (Optimasi)']       = metrics_comparison['XGBoost (Optimasi)'].round(4)
+
+print(metrics_comparison.to_string())
+
+--- CELL 5 (code) ---
+# ============================================================
+# CELL 3: Visualisasi Perbandingan Metrik (Bar Chart)
+# ============================================================
+fig, axes = plt.subplots(2, 2, figsize=(14, 10))
+fig.suptitle('≡ƒÅå Perbandingan Metrik: Random Forest vs XGBoost', fontsize=14, fontweight='bold')
+
+rf_vals  = [rf_metrics['test'][k] for k in ['MAE', 'RMSE', 'R2', 'MAPE']]
+xgb_vals = [xgb_metrics['tuned']['test'][k] for k in ['MAE', 'RMSE', 'R2', 'MAPE']]
+metric_names = ['MAE (%)', 'RMSE (%)', 'R┬▓', 'MAPE (%)']
+colors_rf  = '#1565C0'
+colors_xgb = '#43A047'
+
+for i, (ax, rf_v, xgb_v, name) in enumerate(zip(axes.flat, rf_vals, xgb_vals, metric_names)):
+    models  = ['Random Forest', 'XGBoost']
+    values  = [rf_v, xgb_v]
+    colors  = [colors_rf, colors_xgb]
+    bars    = ax.bar(models, values, color=colors, alpha=0.85, width=0.5)
+    ax.set_title(name, fontweight='bold', fontsize=12)
+    ax.set_ylabel(name)
+    for bar, val in zip(bars, values):
+        ax.text(bar.get_x() + bar.get_width()/2, bar.get_height() * 1.01,
+                f'{val:.4f}', ha='center', va='bottom', fontweight='bold', fontsize=10)
+    # Tandai model terbaik
+    best_idx = np.argmin(values) if name != 'R┬▓' else np.argmax(values)
+    bars[best_idx].set_edgecolor('gold')
+    bars[best_idx].set_linewidth(3)
+
+plt.tight_layout()
+plt.savefig('dataset/plot_perbandingan_metrik.png', dpi=150, bbox_inches='tight')
+plt.show()
+print('Γ£à Plot disimpan ke dataset/plot_perbandingan_metrik.png')
+
+--- CELL 7 (code) ---
+# ============================================================
+# CELL 4: Visualisasi Time Series ΓÇô Perbandingan Prediksi
+# ============================================================
+n_plot = 300
+waktu_plot  = df_test['waktu_pembacaan'].values[-n_plot:]
+actual_plot = y_test.values[-n_plot:]
+rf_plot     = y_pred_rf[-n_plot:]
+xgb_plot    = y_pred_xgb[-n_plot:]
+
+fig, axes = plt.subplots(2, 1, figsize=(16, 10))
+fig.suptitle('≡ƒôê Prediksi Kelembaban Tanah Gambut ΓÇô Perbandingan Model', fontsize=14, fontweight='bold')
+
+# Plot 1: Semua model
+axes[0].plot(waktu_plot, actual_plot, color='#212121', linewidth=1.5, label='Aktual', zorder=3)
+axes[0].plot(waktu_plot, rf_plot,     color='#1565C0', linewidth=1.0, linestyle='--', label='Random Forest', alpha=0.8)
+axes[0].plot(waktu_plot, xgb_plot,    color='#43A047', linewidth=1.0, linestyle=':',  label='XGBoost', alpha=0.9)
+
+# Shaded area threshold irigasi
+axes[0].axhspan(0, 60,  alpha=0.08, color='red',   label='Zona Kering (< 60%)')
+axes[0].axhspan(60, 80, alpha=0.05, color='yellow', label='Zona Optimal (60-80%)')
+axes[0].axhline(y=60, color='red',    linestyle='-', alpha=0.5, linewidth=0.8)
+axes[0].axhline(y=80, color='orange', linestyle='-', alpha=0.5, linewidth=0.8)
+axes[0].set_ylabel('Kelembaban Tanah (%)')
+axes[0].set_title('300 Sampel Terakhir ΓÇô Aktual vs Prediksi Kedua Model')
+axes[0].legend(fontsize=9)
+axes[0].set_ylim(0, 110)
+
+# Plot 2: Error absolut
+err_rf  = np.abs(actual_plot - rf_plot)
+err_xgb = np.abs(actual_plot - xgb_plot)
+axes[1].fill_between(waktu_plot, err_rf,  alpha=0.5, color='#1565C0', label=f'Error RF  (MAE={err_rf.mean():.3f}%)')
+axes[1].fill_between(waktu_plot, err_xgb, alpha=0.5, color='#43A047', label=f'Error XGB (MAE={err_xgb.mean():.3f}%)')
+axes[1].set_ylabel('Absolute Error (%)')
+axes[1].set_xlabel('Waktu')
+axes[1].set_title('Error Absolut per Timestep')
+axes[1].legend(fontsize=9)
+
+plt.tight_layout()
+plt.savefig('dataset/plot_perbandingan_prediksi.png', dpi=150, bbox_inches='tight')
+plt.show()
+print('Γ£à Plot disimpan ke dataset/plot_perbandingan_prediksi.png')
+
+--- CELL 9 (code) ---
+# ============================================================
+# CELL 5: Distribusi Error ΓÇô Kedua Model
+# ============================================================
+
+import os
+import numpy as np
+import matplotlib.pyplot as plt
+
+# Pastikan array aktual dan prediksi memiliki bentuk satu dimensi
+y_test_array = np.asarray(y_test).ravel()
+y_pred_rf_array = np.asarray(y_pred_rf).ravel()
+y_pred_xgb_array = np.asarray(y_pred_xgb).ravel()
+
+# Validasi panjang data
+if not (
+    len(y_test_array)
+    == len(y_pred_rf_array)
+    == len(y_pred_xgb_array)
+):
+    raise ValueError(
+        'Panjang y_test, y_pred_rf, dan y_pred_xgb tidak sama.'
+    )
+
+# Hitung residual
+residual_rf = y_test_array - y_pred_rf_array
+residual_xgb = y_test_array - y_pred_xgb_array
+
+# Buang nilai NaN atau infinite
+residual_rf = residual_rf[np.isfinite(residual_rf)]
+residual_xgb = residual_xgb[np.isfinite(residual_xgb)]
+
+# Membuat kanvas
+fig, axes = plt.subplots(
+    1,
+    2,
+    figsize=(14, 5)
+)
+
+fig.suptitle(
+    '≡ƒôè Distribusi Residual ΓÇô Perbandingan Model',
+    fontsize=13,
+    fontweight='bold'
+)
+
+# ------------------------------------------------------------
+# 1. Histogram residual
+# ------------------------------------------------------------
+axes[0].hist(
+    residual_rf,
+    bins=80,
+    color='#1565C0',
+    alpha=0.65,
+    edgecolor='white',
+    label='Random Forest'
+)
+
+axes[0].hist(
+    residual_xgb,
+    bins=80,
+    color='#43A047',
+    alpha=0.65,
+    edgecolor='white',
+    label='XGBoost'
+)
+
+axes[0].axvline(
+    0,
+    color='red',
+    linestyle='--',
+    linewidth=1.5,
+    label='Residual = 0'
+)
+
+axes[0].set_xlabel('Residual (Aktual - Prediksi)')
+axes[0].set_ylabel('Frekuensi')
+axes[0].set_title('Distribusi Residual')
+axes[0].legend()
+axes[0].grid(
+    axis='y',
+    linestyle='--',
+    alpha=0.3
+)
+
+# ------------------------------------------------------------
+# 2. Boxplot residual
+# ------------------------------------------------------------
+bp_data = [
+    residual_rf,
+    residual_xgb
+]
+
+bp = axes[1].boxplot(
+    bp_data,
+    tick_labels=[
+        'Random Forest',
+        'XGBoost'
+    ],
+    patch_artist=True,
+    notch=True,
+    showmeans=True,
+    meanprops={
+        'marker': 'o',
+        'markerfacecolor': 'white',
+        'markeredgecolor': 'black',
+        'markersize': 6
+    },
+    medianprops={
+        'color': 'black',
+        'linewidth': 1.5
+    }
+)
+
+# Warna kotak
+box_colors = [
+    '#1565C0',
+    '#43A047'
+]
+
+for patch, color in zip(
+    bp['boxes'],
+    box_colors
+):
+    patch.set_facecolor(color)
+    patch.set_alpha(0.7)
+
+axes[1].axhline(
+    0,
+    color='red',
+    linestyle='--',
+    linewidth=1.5,
+    alpha=0.7
+)
+
+axes[1].set_ylabel('Residual')
+axes[1].set_title('Boxplot Residual')
+axes[1].grid(
+    axis='y',
+    linestyle='--',
+    alpha=0.3
+)
+
+# ------------------------------------------------------------
+# 3. Simpan gambar
+# ------------------------------------------------------------
+output_dir = 'dataset'
+os.makedirs(
+    output_dir,
+    exis
+
+--- CELL 12 (code) ---
+# ============================================================
+# CELL 6: Scatter Plot Aktual vs Prediksi ΓÇô Kedua Model
+# ============================================================
+fig, axes = plt.subplots(1, 2, figsize=(14, 6))
+fig.suptitle('≡ƒôê Scatter Plot: Aktual vs Prediksi ΓÇô Kedua Model', fontsize=13, fontweight='bold')
+
+for ax, y_pred, title, color, metrics in [
+    (axes[0], y_pred_rf,  'Random Forest (Baseline)', '#1565C0', rf_metrics['test']),
+    (axes[1], y_pred_xgb, 'XGBoost (Optimasi)',       '#43A047', xgb_metrics['tuned']['test'])
+]:
+    ax.scatter(y_test, y_pred, alpha=0.2, s=4, color=color)
+    min_v = min(y_test.min(), y_pred.min())
+    max_v = max(y_test.max(), y_pred.max())
+    ax.plot([min_v, max_v], [min_v, max_v], 'r--', linewidth=2, label='Prediksi Sempurna')
+    ax.set_xlabel('Aktual (%)', fontsize=11)
+    ax.set_ylabel('Prediksi (%)', fontsize=11)
+    ax.set_title(f'{title}\nR┬▓={metrics["R2"]:.4f} | MAE={metrics["MAE"]:.3f}% | RMSE={metrics["RMSE"]:.3f}%',
+                 fontsize=10)
+    ax.legend(fontsize=9)
+
+plt.tight_layout()
+plt.savefig('dataset/plot_scatter_kedua_model.png', dpi=150, bbox_inches='tight')
+plt.show()
+
+--- CELL 14 (code) ---
+# ============================================================
+# CELL 7: Sistem Rekomendasi Irigasi Adaptif Gambut
+# ============================================================
+print('=== ≡ƒÆº SISTEM REKOMENDASI IRIGASI ADAPTIF GAMBUT ===')
+print()
+
+# Tentukan model terbaik berdasarkan R┬▓ dan RMSE
+r2_rf  = rf_metrics['test']['R2']
+r2_xgb = xgb_metrics['tuned']['test']['R2']
+
+if r2_xgb >= r2_rf:
+    best_model_name = 'XGBoost'
+    y_pred_best = y_pred_xgb
+    best_metrics = xgb_metrics['tuned']['test']
+else:
+    best_model_name = 'Random Forest'
+    y_pred_best = y_pred_rf
+    best_metrics = rf_metrics['test']
+
+print(f'Γ£à Model terbaik dipilih: {best_model_name}')
+print(f'   R┬▓ = {best_metrics["R2"]:.4f} | MAE = {best_metrics["MAE"]:.4f}% | RMSE = {best_metrics["RMSE"]:.4f}%')
+print()
+
+# --- Threshold Irigasi Gambut ---
+# Referensi: Lahan gambut optimal 70-80% kapasitas lapang
+THRESHOLD_KRITIS  = 60   # % ΓåÆ Irigasi SEGERA
+THRESHOLD_WASPADA = 70   # % ΓåÆ Siap Irigasi
+THRESHOLD_OPTIMAL = 80   # % ΓåÆ Kondisi Ideal
+THRESHOLD_JENUH   = 90   # % ΓåÆ Hentikan Irigasi
+
+def rekomendasi_irigasi(kelembaban_pred):
+    if kelembaban_pred < THRESHOLD_KRITIS:
+        return 'IRIGASI SEGERA ≡ƒÜ¿', 'KRITIS', '#D32F2F'
+    elif kelembaban_pred < THRESHOLD_WASPADA:
+        return 'BERSIAP IRIGASI ΓÜá∩╕Å', 'WASPADA', '#F57C00'
+    elif kelembaban_pred < THRESHOLD_OPTIMAL:
+        return 'KONDISI OPTIMAL Γ£à', 'OPTIMAL', '#2E7D32'
+    elif kelembaban_pred < THRESHOLD_JENUH:
+        return 'PERHATIKAN DRAINASE ≡ƒö╡', 'LEMBAB', '#1565C0'
+    else:
+        return 'HENTIKAN IRIGASI ≡ƒ¢æ', 'JENUH', '#6A1B9A'
+
+# Terapkan rekomendasi pada data test
+df_rekomendasi = df_test[['waktu_pembacaan', TARGET]].copy()
+df_rekomendasi['prediksi_terbaik'] = y_pred_best
+df_rekomendasi[['rekomendasi', 'status', 'warna']] = df_rekomendasi['prediksi_terbaik'].apply(
+    lambda x: pd.Series(rekomendasi_irigasi(x))
+)
+
+# Statistik rekomendasi
+print('≡ƒôï Distribusi Status Irigasi pada Data Test:')
+status_count = df_rekomendasi['status'].value_counts()
+status_pct   = (status_count / len(df_rekomendasi) * 100).round(2)
+df_status = pd.DataFrame({'Jumlah': status_count, 'Persentase(%)': status_pct})
+print(df_status.to_string())
+
+--- CELL 16 (code) ---
+# ============================================================
+# CELL 8: Visualisasi Rekomendasi Irigasi
+# ============================================================
+fig, axes = plt.subplots(2, 1, figsize=(16, 10))
+fig.suptitle(f'≡ƒÆº Sistem Rekomendasi Irigasi Adaptif Gambut ΓÇô Model {best_model_name}',
+             fontsize=14, fontweight='bold')
+
+# Warna per status
+warna_map = {
+    'KRITIS' : '#D32F2F',
+    'WASPADA': '#F57C00',
+    'OPTIMAL': '#2E7D32',
+    'LEMBAB' : '#1565C0',
+    'JENUH'  : '#6A1B9A'
+}
+
+# Plot 1: Prediksi + Status Irigasi
+n_plot = 500
+df_plot = df_rekomendasi.tail(n_plot).copy()
+
+axes[0].plot(df_plot['waktu_pembacaan'], df_plot[TARGET],
+             color='black', linewidth=1, label='Aktual', alpha=0.7, zorder=3)
+axes[0].plot(df_plot['waktu_pembacaan'], df_plot['prediksi_terbaik'],
+             color='#43A047', linewidth=1.2, linestyle='--', label=f'Prediksi {best_model_name}', zorder=2)
+
+# Shading zona
+axes[0].axhspan(0,                  THRESHOLD_KRITIS,  alpha=0.12, color='red')
+axes[0].axhspan(THRESHOLD_KRITIS,   THRESHOLD_WASPADA, alpha=0.10, color='orange')
+axes[0].axhspan(THRESHOLD_WASPADA,  THRESHOLD_OPTIMAL, alpha=0.08, color='green')
+axes[0].axhspan(THRESHOLD_OPTIMAL,  THRESHOLD_JENUH,   alpha=0.08, color='blue')
+axes[0].axhspan(THRESHOLD_JENUH,    105,               alpha=0.08, color='purple')
+
+# Garis threshold
+for thresh, label, color in [
+    (THRESHOLD_KRITIS,  f'Kritis ({THRESHOLD_KRITIS}%)',  'red'),
+    (THRESHOLD_WASPADA, f'Waspada ({THRESHOLD_WASPADA}%)', 'orange'),
+    (THRESHOLD_OPTIMAL, f'Optimal ({THRESHOLD_OPTIMAL}%)', 'green'),
+    (THRESHOLD_JENUH,   f'Jenuh ({THRESHOLD_JENUH}%)',    'purple'),
+]:
+    axes[0].axhline(y=thresh, color=color, linestyle=':', alpha=0.8, linewidth=1.2, label=label)
+
+axes[0].set_ylabel('Kelembaban Tanah (%)')
+axes[0].set_title('Prediksi Kelembaban vs Threshold Irigasi')
+axes[0].legend(fontsize=8, loc='lower right')
+axes[0].set_ylim(0, 108)
+
+# Plot 2: Pie chart distribusi status
+status_count = df_rekomendasi['status'].value_counts()
+pie_colors = [warna_map[s] for s in status_count.index]
+wedges, texts, autotexts = axes[1].pie(
+    status_count.values,
+    labels=status_count.index,
+    autopct='%1.1f%%',
+    colors=pie_colors,
+    startangle=90,
+    pctdistance=0.8,
+    wedgeprops={'edgecolor': 'white', 'linewidth': 2}
+)
+for text in autotexts:
+    text.set_fontsize(10)
+    text.set_fontweight('bold')
+axes[1].set_title('Distribusi Status Irigasi (Data Test)', fontweight='bold')
+
+plt.tight_layout()
+plt.savefig('dataset/plot_rekomendasi_irigasi.png', dpi=150, bbox_inches='tight')
+plt.show()
+print('Γ£à Plot disimpan ke dataset/plot_rekomendasi_irigasi.png')
+
+--- CELL 18 (code) ---
+# ============================================================
+# CELL 9: Contoh Penggunaan Prediksi Real-Time
+# ============================================================
+
+import os
+import json
+import pickle
+import numpy as np
+import pandas as pd
+
+print('=== ≡ƒñû SIMULASI PREDIKSI REAL-TIME ===')
+print('Contoh penggunaan model untuk prediksi kelembaban 1 menit ke depan:')
+print()
+
+# ------------------------------------------------------------
+# 9a. Menentukan model terbaik
+# ------------------------------------------------------------
+model_prefix = (
+    'xgb'
+    if best_model_name == 'XGBoost'
+    else 'rf'
+)
+
+model_file = f'models/{model_prefix}_model.pkl'
+
+if not os.path.exists(model_file):
+    raise FileNotFoundError(
+        f'File model tidak ditemukan: {model_file}'
+    )
+
+# ------------------------------------------------------------
+# 9b. Load model terbaik
+# ------------------------------------------------------------
+with open(model_file, 'rb') as file:
+    best_model = pickle.load(file)
+
+print(f'Model yang digunakan: {best_model_name}')
+print(f'File model: {model_file}')
+
+# ------------------------------------------------------------
+# 9c. Load daftar fitur
+# ------------------------------------------------------------
+feature_file = 'models/feature_cols.json'
+
+if not os.path.exists(feature_file):
+    raise FileNotFoundError(
+        f'File daftar fitur tidak ditemukan: {feature_file}'
+    )
+
+with open(feature_file, 'r', encoding='utf-8') as file:
+    feature_cols = json.load(file)
+
+# ------------------------------------------------------------
+# 9d. Load data pengujian
+# ------------------------------------------------------------
+test_file = 'dataset/data_test.csv'
+
+if not os.path.exists(test_file):
+    raise FileNotFoundError(
+        f'File data test tidak ditemukan: {test_file}'
+    )
+
+df_test_full = pd.read_csv(
+    test_file,
+    parse_dates=['waktu_pembacaan']
+)
+
+# Validasi kolom fitur
+missing_features = [
+    col for col in feature_cols
+    if col not in df_test_full.columns
+]
+
+if missing_features:
+    raise KeyError(
+        'Fitur berikut tidak ditemukan pada data_test.csv: '
+        f'{missing_features}'
+    )
+
+target_col = 'target_kelembaban_next'
+
+if target_col not in df_test_full.columns:
+    raise KeyError(
+        f'Kolom target tidak ditemukan: {target_col}'
+    )
+
+# ------------------------------------------------------------
+# 9e. Ambil lima sampel terakhir
+# ------------------------------------------------------------
+sample_count = min(
+    5,
+    len(df_test_full)
+)
+
+samples = (
+    df_test_full[feature_cols]
+    .tail(sample_count)
+    .copy()
+)
+
+predictions = best_model.predict(samples)
+
+# Ubah hasil prediksi menjadi array satu dimensi
+predictions = np.asarray(predictions).reshape(-1)
+
+aktual_vals = (
+    df_test_full[target_col]
+    .tail(sample_count)
+    .to_numpy()
+)
+
+waktu_vals = (
+    df_test_full['waktu_pembacaan']
+    .tail(sample_count)
+    .to_numpy()
+)
+
+# -------------------------------------------
+
+--- CELL 21 (code) ---
+# ============================================================
+# CELL 10: Simpan Laporan Akhir & Kesimpulan
+# ============================================================
+df_rekomendasi.to_csv('dataset/hasil_rekomendasi_irigasi.csv', index=False)
+
+print('=' * 65)
+print('≡ƒÅå KESIMPULAN & REKOMENDASI MODEL')
+print('=' * 65)
+print()
+print('≡ƒôè HASIL EVALUASI MODEL (DATA TEST):')
+print(f'  ΓöîΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓö¼ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓö¼ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÉ')
+print(f'  Γöé Metrik              Γöé Random Frst Γöé XGBoost     Γöé')
+print(f'  Γö£ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓö╝ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓö╝ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöñ')
+print(f'  Γöé MAE  (%)            Γöé {rf_metrics["test"]["MAE"]:>11.4f} Γöé {xgb_metrics["tuned"]["test"]["MAE"]:>11.4f} Γöé')
+print(f'  Γöé RMSE (%)            Γöé {rf_metrics["test"]["RMSE"]:>11.4f} Γöé {xgb_metrics["tuned"]["test"]["RMSE"]:>11.4f} Γöé')
+print(f'  Γöé R┬▓                  Γöé {rf_metrics["test"]["R2"]:>11.4f} Γöé {xgb_metrics["tuned"]["test"]["R2"]:>11.4f} Γöé')
+print(f'  Γöé MAPE (%)            Γöé {rf_metrics["test"]["MAPE"]:>11.4f} Γöé {xgb_metrics["tuned"]["test"]["MAPE"]:>11.4f} Γöé')
+print(f'  ΓööΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓö┤ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓö┤ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÿ')
+print()
+print(f'Γ£à MODEL TERPILIH: {best_model_name}')
+print()
+print('≡ƒÆº THRESHOLD IRIGASI GAMBUT:')
+print(f'  ≡ƒö┤ < {THRESHOLD_KRITIS}%  ΓåÆ IRIGASI SEGERA (tanah terlalu kering)')
+print(f'  ≡ƒƒá {THRESHOLD_KRITIS}-{THRESHOLD_WASPADA}% ΓåÆ BERSIAP IRIGASI')
+print(f'  ≡ƒƒó {THRESHOLD_WASPADA}-{THRESHOLD_OPTIMAL}% ΓåÆ KONDISI OPTIMAL (tidak perlu irigasi)')
+print(f'  ≡ƒö╡ {THRESHOLD_OPTIMAL}-{THRESHOLD_JENUH}% ΓåÆ LEMBAB (perhatikan drainase)')
+print(f'  ≡ƒƒú > {THRESHOLD_JENUH}%  ΓåÆ HENTIKAN IRIGASI (risiko genangan gambut)')
+print()
+print('≡ƒôü FILE OUTPUT:')
+print('  models/rf_model.pkl            ΓåÆ Model Random Forest')
+print('  models/xgb_model.pkl           ΓåÆ Model XGBoost')
+print('  models/xgb_model.json          ΓåÆ Model XGBoost (native format)')
+print('  dataset/prediksi_rf.csv        ΓåÆ Hasil prediksi RF')
+print('  dataset/prediksi_xgb.csv       ΓåÆ Hasil prediksi XGBoost')
+print('  dataset/hasil_rekomendasi_irigasi.csv ΓåÆ Rekomendasi irigasi')
+print()
+print('Γ£à Analisis Machine Learning untuk Irigasi Gambut Selesai!')
+print('   Data dari 3 node ESP32 berhasil digunakan untuk prediksi')
+print('   kelembaban tanah gambut secara akurat dan adaptif.')
