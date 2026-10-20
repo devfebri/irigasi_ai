@@ -1,6 +1,6 @@
 {
-  "baris_awal": 90720,
-  "baris_akhir": 90720,
+  "baris_awal": 120145,
+  "baris_akhir": 118489,
   "kolom_akhir": [
     "kelembaban_tanah_1",
     "kelembaban_udara_1",
@@ -26,6 +26,6 @@
     "sensor_tanah_adc_2",
     "sensor_tanah_adc_3"
   ],
-  "periode_awal": "2026-07-10 00:00:24",
-  "periode_akhir": "2026-09-10 23:59:55"
+  "periode_awal": "2026-07-10 11:16:24",
+  "periode_akhir": "2026-10-19 08:50:06"
 }
