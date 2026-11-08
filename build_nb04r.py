@@ -10,7 +10,7 @@ md("""
 **Basis:** `04_xgboost.ipynb` (tidak diubah). Ruang pencarian, `n_iter=25`, dan TimeSeriesSplit 3 fold sama seperti lama (`random_state=42`).
 
 **Apa yang direvisi dan mengapa:**
-- **Perbaikan kebocoran data.** Notebook lama memakai data uji (`eval_set=[(X_test, y_test)]`) untuk early stopping, sehingga jumlah pohon dipilih dengan melihat data uji. Kini data latih dibagi kronologis **90/10** menjadi `fit` dan `val`; model final dilatih di `fit` dengan `eval_set=[(X_val, y_val)]` dan early stopping 30. **Data uji tidak dipakai saat pelatihan.**
+- **Perbaikan kebocoran data.** Notebook lama memakai data uji (`eval_set=[(X_test, y_test)]`) untuk early stopping, sehingga jumlah pohon dipilih dengan melihat data uji. Kini **early stopping dihilangkan**: jumlah pohon (`n_estimators`) ditentukan oleh pencarian hiperparameter (TimeSeriesSplit pada data latih), dan model final dilatih pada seluruh data latih. **Data uji tidak dipakai saat pelatihan.**
 - Input/output dialihkan ke `dataset/revisi/` dan `models/revisi/` (data 2 node, fitur per segmen). File prediksi memuat `segmen`, `aktual`, dan `sekarang`.
 """)
 
@@ -52,15 +52,14 @@ lgb_param_dist = {
     'n_estimators': randint(200, 601), 'max_depth': randint(4, 11), 'learning_rate': uniform(0.01, 0.14),
     'subsample': uniform(0.6, 0.4), 'colsample_bytree': uniform(0.6, 0.4), 'min_child_samples': randint(10, 51),
     'reg_alpha': uniform(0, 0.5), 'reg_lambda': uniform(0.5, 2.0), 'num_leaves': randint(20, 80)}
-N_ITER, N_CV, VAL_FRAC = 25, 3, 0.10
+N_ITER, N_CV = 25, 3
 
 def muat(horizon):
     target = TARGET_MAP[horizon]
     tr = pd.read_csv(f'{OUT}/data_train_{horizon}.csv', parse_dates=['waktu_pembacaan'])
     te = pd.read_csv(f'{OUT}/data_test_{horizon}.csv',  parse_dates=['waktu_pembacaan'])
     with open(f'{MOUT}/feature_cols_{horizon}.json') as f: fc = json.load(f)
-    k = int(len(tr)*(1-VAL_FRAC))                         # split kronologis 90/10 dalam data latih
-    return tr, te, fc, k, target
+    return tr, te, fc, target
 
 def simpan_prediksi(te, target, pred, nama, horizon):
     pd.DataFrame({'waktu_pembacaan': te['waktu_pembacaan'], 'segmen': te['segmen'], 'aktual': te[target].values,
@@ -69,15 +68,14 @@ def simpan_prediksi(te, target, pred, nama, horizon):
 """)
 
 code("""
-# -- CELL 4: XGBoost (early stopping di VAL, bukan data uji) -------
+# -- CELL 4: XGBoost (tanpa early stopping) -------
 xgb_results = {}
 for horizon in HORIZONS:
     t0 = time.time()
-    tr, te, fc, k, target = muat(horizon)
+    tr, te, fc, target = muat(horizon)
     X_tr, y_tr = tr[fc].values.astype(np.float32), tr[target].values.astype(np.float32)
     X_te, y_te = te[fc].values.astype(np.float32), te[target].values.astype(np.float32)
-    X_fit, y_fit, X_val, y_val = X_tr[:k], y_tr[:k], X_tr[k:], y_tr[k:]
-    print(f'\\n=== XGBoost {horizon} | fit={len(X_fit):,} val={len(X_val):,} test={len(X_te):,} ===')
+    print(f'\\n=== XGBoost {horizon} | train={len(X_tr):,} test={len(X_te):,} ===')
 
     search = RandomizedSearchCV(
         XGBRegressor(tree_method='hist', random_state=42, n_jobs=-1, eval_metric='rmse', verbosity=0),
@@ -88,33 +86,31 @@ for horizon in HORIZONS:
     cv_rmse = float(-search.best_score_)
     print(f'  CV-RMSE {cv_rmse:.4f} | {best}')
 
-    model = XGBRegressor(**best, tree_method='hist', random_state=42, n_jobs=-1,
-                         early_stopping_rounds=30, eval_metric='rmse', verbosity=0)
-    model.fit(X_fit, y_fit, eval_set=[(X_val, y_val)], verbose=False)
-    print(f'  best_iteration={model.best_iteration} dari n_estimators={best["n_estimators"]}')
+    model = XGBRegressor(**best, tree_method='hist', random_state=42, n_jobs=-1, eval_metric='rmse', verbosity=0)
+    model.fit(X_tr, y_tr, verbose=False)                  # seluruh data latih, tanpa early stopping
+    print(f'  n_estimators={best["n_estimators"]}')
 
     p_tr, p_te = model.predict(X_tr), model.predict(X_te)
     m_tr = evaluasi(y_tr, p_tr, f'XGB train-{horizon}'); m_te = evaluasi(y_te, p_te, f'XGB test -{horizon}')
     path = f'{MOUT}/xgb_model_{horizon}.pkl'
     joblib.dump(model, path, compress=3); model.save_model(f'{MOUT}/xgb_model_{horizon}.json')
     simpan_prediksi(te, target, p_te, 'xgb', horizon)
-    xgb_results[horizon] = {'best_params': best, 'cv_rmse': cv_rmse, 'best_iteration': int(model.best_iteration),
-        'n_fit': int(len(X_fit)), 'n_val': int(len(X_val)), 'train_metrics': m_tr, 'test_metrics': m_te,
+    xgb_results[horizon] = {'best_params': best, 'cv_rmse': cv_rmse, 'n_estimators': int(best['n_estimators']),
+        'n_train': int(len(X_tr)), 'train_metrics': m_tr, 'test_metrics': m_te,
         'model_size_mb': float(os.path.getsize(path)/1e6), 'waktu_latih_detik': float(time.time()-t0)}
     print(f'  selesai {time.time()-t0:.0f} detik')
 with open(f'{MOUT}/xgb_metrics_all.json', 'w') as f: json.dump(xgb_results, f, indent=2)
 """)
 
 code("""
-# -- CELL 5: LightGBM (early stopping di VAL, bukan data uji) ------
+# -- CELL 5: LightGBM (tanpa early stopping) ------
 lgb_results = {}
 for horizon in HORIZONS:
     t0 = time.time()
-    tr, te, fc, k, target = muat(horizon)
+    tr, te, fc, target = muat(horizon)
     X_tr, y_tr = tr[fc].values.astype(np.float32), tr[target].values.astype(np.float32)
     X_te, y_te = te[fc].values.astype(np.float32), te[target].values.astype(np.float32)
-    X_fit, y_fit, X_val, y_val = X_tr[:k], y_tr[:k], X_tr[k:], y_tr[k:]
-    print(f'\\n=== LightGBM {horizon} | fit={len(X_fit):,} val={len(X_val):,} test={len(X_te):,} ===')
+    print(f'\\n=== LightGBM {horizon} | train={len(X_tr):,} test={len(X_te):,} ===')
 
     search = RandomizedSearchCV(
         LGBMRegressor(random_state=42, n_jobs=-1, verbosity=-1),
@@ -126,17 +122,16 @@ for horizon in HORIZONS:
     print(f'  CV-RMSE {cv_rmse:.4f} | {best}')
 
     model = LGBMRegressor(**best, random_state=42, n_jobs=-1, verbosity=-1)
-    model.fit(X_fit, y_fit, eval_set=[(X_val, y_val)],
-              callbacks=[lgb.early_stopping(30, verbose=False), lgb.log_evaluation(period=-1)])
-    print(f'  best_iteration={model.best_iteration_} dari n_estimators={best["n_estimators"]}')
+    model.fit(X_tr, y_tr)                                 # seluruh data latih, tanpa early stopping
+    print(f'  n_estimators={best["n_estimators"]}')
 
     p_tr, p_te = model.predict(X_tr), model.predict(X_te)
     m_tr = evaluasi(y_tr, p_tr, f'LGB train-{horizon}'); m_te = evaluasi(y_te, p_te, f'LGB test -{horizon}')
     path = f'{MOUT}/lgb_model_{horizon}.pkl'
     joblib.dump(model, path, compress=3)
     simpan_prediksi(te, target, p_te, 'lgb', horizon)
-    lgb_results[horizon] = {'best_params': best, 'cv_rmse': cv_rmse, 'best_iteration': int(model.best_iteration_),
-        'n_fit': int(len(X_fit)), 'n_val': int(len(X_val)), 'train_metrics': m_tr, 'test_metrics': m_te,
+    lgb_results[horizon] = {'best_params': best, 'cv_rmse': cv_rmse, 'n_estimators': int(best['n_estimators']),
+        'n_train': int(len(X_tr)), 'train_metrics': m_tr, 'test_metrics': m_te,
         'model_size_mb': float(os.path.getsize(path)/1e6), 'waktu_latih_detik': float(time.time()-t0)}
     print(f'  selesai {time.time()-t0:.0f} detik')
 with open(f'{MOUT}/lgb_metrics_all.json', 'w') as f: json.dump(lgb_results, f, indent=2)

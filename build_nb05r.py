@@ -248,11 +248,11 @@ for nm, fn in [('pembersihan_data', f'{OUT}/cleaning_report_revisi.json'), ('fea
     with open(fn) as f: HASIL[nm] = json.load(f)
 HASIL['hiperparameter_dan_cv'] = {
     'rf': {h: {'best_params': rf_m[h]['best_params'], 'cv_rmse': rf_m[h]['cv_rmse'], 'oob_score': rf_m[h]['oob_score']} for h in HORIZONS},
-    'xgb': {h: {'best_params': xgb_m[h]['best_params'], 'cv_rmse': xgb_m[h]['cv_rmse'], 'best_iteration': xgb_m[h]['best_iteration']} for h in HORIZONS},
-    'lgb': {h: {'best_params': lgb_m[h]['best_params'], 'cv_rmse': lgb_m[h]['cv_rmse'], 'best_iteration': lgb_m[h]['best_iteration']} for h in HORIZONS}}
+    'xgb': {h: {'best_params': xgb_m[h]['best_params'], 'cv_rmse': xgb_m[h]['cv_rmse'], 'n_estimators': xgb_m[h]['n_estimators']} for h in HORIZONS},
+    'lgb': {h: {'best_params': lgb_m[h]['best_params'], 'cv_rmse': lgb_m[h]['cv_rmse'], 'n_estimators': lgb_m[h]['n_estimators']} for h in HORIZONS}}
 HASIL['metrik_train'] = {LABEL[m]: {h: (rf_m, xgb_m, lgb_m)[['rf', 'xgb', 'lgb'].index(m)][h]['train_metrics'] for h in HORIZONS} for m in ['rf', 'xgb', 'lgb']}
 HASIL['catatan_metodologi'] = {
-    'early_stopping': 'XGBoost/LightGBM: split kronologis 90/10 pada data latih (fit/val); data uji tidak dipakai saat pelatihan.',
+    'early_stopping': 'XGBoost/LightGBM: early stopping dihilangkan; n_estimators dari pencarian hiperparameter (TimeSeriesSplit), model final dilatih pada seluruh data latih; data uji tidak dipakai saat pelatihan.',
     'node3': 'Node 3 dikeluarkan dari target dan fitur; sensitivitas pada dataset 3 node.',
     'segmentasi': 'Selisih waktu > 10 menit = segmen baru; semua lag/rolling/EWM/diff per segmen; target via merge_asof (toleransi 2 menit) dan NaN bila beda segmen.'}
 with open(f'{MOUT}/hasil_revisi_lengkap.json', 'w') as f: json.dump(py(HASIL), f, indent=2, ensure_ascii=False)
