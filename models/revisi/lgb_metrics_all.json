@@ -1,0 +1,95 @@
+{
+  "60m": {
+    "best_params": {
+      "colsample_bytree": 0.6186662652854461,
+      "learning_rate": 0.1463257726378043,
+      "max_depth": 10,
+      "min_child_samples": 12,
+      "n_estimators": 506,
+      "num_leaves": 26,
+      "reg_alpha": 0.08526206184364576,
+      "reg_lambda": 0.630103185970559,
+      "subsample": 0.9795542149013333
+    },
+    "cv_rmse": 7.3943617643524275,
+    "best_iteration": 16,
+    "n_fit": 74226,
+    "n_val": 8248,
+    "train_metrics": {
+      "MAE": 1.8559331704544935,
+      "RMSE": 2.708854497441906,
+      "R2": 0.9773887341069925,
+      "MAPE": 3.010964569279254
+    },
+    "test_metrics": {
+      "MAE": 1.8254757049132813,
+      "RMSE": 3.0217553952141007,
+      "R2": 0.948614992053207,
+      "MAPE": 3.13561474681466
+    },
+    "model_size_mb": 0.019913,
+    "waktu_latih_detik": 911.1940402984619
+  },
+  "180m": {
+    "best_params": {
+      "colsample_bytree": 0.996884623716487,
+      "learning_rate": 0.09644741134788032,
+      "max_depth": 5,
+      "min_child_samples": 31,
+      "n_estimators": 452,
+      "num_leaves": 63,
+      "reg_alpha": 0.011531212520707879,
+      "reg_lambda": 1.5495493205167783,
+      "subsample": 0.7599443886861021
+    },
+    "cv_rmse": 10.904367352271732,
+    "best_iteration": 16,
+    "n_fit": 72946,
+    "n_val": 8106,
+    "train_metrics": {
+      "MAE": 3.825076472094586,
+      "RMSE": 5.1740836581000105,
+      "R2": 0.9172457375783336,
+      "MAPE": 6.321185356361814
+    },
+    "test_metrics": {
+      "MAE": 3.8513554897663473,
+      "RMSE": 6.074398199669254,
+      "R2": 0.7944217612678903,
+      "MAPE": 7.00837675122743
+    },
+    "model_size_mb": 0.020956,
+    "waktu_latih_detik": 930.7024245262146
+  },
+  "360m": {
+    "best_params": {
+      "colsample_bytree": 0.6806876809341584,
+      "learning_rate": 0.13540690339429273,
+      "max_depth": 4,
+      "min_child_samples": 41,
+      "n_estimators": 587,
+      "num_leaves": 49,
+      "reg_alpha": 0.06966572720293784,
+      "reg_lambda": 1.7088347585556345,
+      "subsample": 0.8159364365206693
+    },
+    "cv_rmse": 12.291042480847276,
+    "best_iteration": 14,
+    "n_fit": 71153,
+    "n_val": 7906,
+    "train_metrics": {
+      "MAE": 4.04803455937469,
+      "RMSE": 6.213734160988254,
+      "R2": 0.8806032913920636,
+      "MAPE": 6.677525285735676
+    },
+    "test_metrics": {
+      "MAE": 5.917844611597015,
+      "RMSE": 8.357850010063947,
+      "R2": 0.6171034997263107,
+      "MAPE": 10.508256272920114
+    },
+    "model_size_mb": 0.012396,
+    "waktu_latih_detik": 830.4932940006256
+  }
+}

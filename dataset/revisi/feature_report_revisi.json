@@ -1,0 +1,109 @@
+{
+  "jumlah_fitur": 73,
+  "kelompok_fitur": {
+    "mentah Node 1-2 + hujan": 9,
+    "waktu": 11,
+    "target saat ini (kt_avg)": 1,
+    "lag kt_avg": 8,
+    "lag per node": 6,
+    "lag udara/suhu/hujan": 9,
+    "rolling kt": 12,
+    "rolling hujan": 3,
+    "diff kt_avg": 4,
+    "EWM": 3,
+    "rata-rata node": 3,
+    "VPD": 3,
+    "selisih node": 1
+  },
+  "split_2node": {
+    "60m": {
+      "n_total": 103093,
+      "n_train": 82474,
+      "n_test": 20619,
+      "train_awal": "2026-07-10 17:16:26",
+      "train_akhir": "2026-09-30 03:53:10",
+      "test_awal": "2026-09-30 03:54:10",
+      "test_akhir": "2026-10-19 07:52:06",
+      "segmen_test": [
+        34,
+        38,
+        39
+      ]
+    },
+    "180m": {
+      "n_total": 101315,
+      "n_train": 81052,
+      "n_test": 20263,
+      "train_awal": "2026-07-10 17:16:26",
+      "train_akhir": "2026-09-30 03:59:10",
+      "test_awal": "2026-09-30 04:00:10",
+      "test_akhir": "2026-10-19 05:52:05",
+      "segmen_test": [
+        34,
+        38,
+        39
+      ]
+    },
+    "360m": {
+      "n_total": 98824,
+      "n_train": 79059,
+      "n_test": 19765,
+      "train_awal": "2026-07-10 17:16:26",
+      "train_akhir": "2026-09-30 03:31:10",
+      "test_awal": "2026-09-30 03:32:10",
+      "test_akhir": "2026-10-19 02:51:47",
+      "segmen_test": [
+        34,
+        38,
+        39
+      ]
+    }
+  },
+  "jumlah_fitur_sens3": 83,
+  "split_sens3": {
+    "60m": {
+      "n_total": 103093,
+      "n_train": 82474,
+      "n_test": 20619,
+      "train_awal": "2026-07-10 17:16:26",
+      "train_akhir": "2026-09-30 03:53:10",
+      "test_awal": "2026-09-30 03:54:10",
+      "test_akhir": "2026-10-19 07:52:06",
+      "segmen_test": [
+        26,
+        27,
+        28
+      ]
+    },
+    "180m": {
+      "n_total": 101315,
+      "n_train": 81052,
+      "n_test": 20263,
+      "train_awal": "2026-07-10 17:16:26",
+      "train_akhir": "2026-09-30 03:59:10",
+      "test_awal": "2026-09-30 04:00:10",
+      "test_akhir": "2026-10-19 05:52:05",
+      "segmen_test": [
+        26,
+        27,
+        28
+      ]
+    },
+    "360m": {
+      "n_total": 98824,
+      "n_train": 79059,
+      "n_test": 19765,
+      "train_awal": "2026-07-10 17:16:26",
+      "train_akhir": "2026-09-30 03:31:10",
+      "test_awal": "2026-09-30 03:32:10",
+      "test_akhir": "2026-10-19 02:51:47",
+      "segmen_test": [
+        26,
+        27,
+        28
+      ]
+    }
+  },
+  "baris_sens3_valid": 110352,
+  "segmen_sens3": 29
+}

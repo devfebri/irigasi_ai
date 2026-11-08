@@ -1,0 +1,31 @@
+[NbConvertApp] Converting notebook 04r_xgboost_lightgbm.ipynb to notebook
+D:\Dosen\2025 Genap\Penelitian\Pak Chindra\irigasi_ai\.venv\Lib\site-packages\zmq\_future.py:718: RuntimeWarning: Proactor event loop does not implement add_reader family of methods required for zmq. Registering an additional selector thread for add_reader support via tornado. Use `asyncio.set_event_loop_policy(WindowsSelectorEventLoopPolicy())` to avoid this warning.
+  self._get_loop()
+[IPKernelApp] WARNING | Kernel is running over TCP without encryption. All communication (including code and outputs) is sent in plain text and is susceptible to eavesdropping. Use IPC transport or launch with kernel manager-provisioned CurveZMQ keys to enable transport encryption.
+Traceback (most recent call last):
+  File [35m"D:\Dosen\2025 Genap\Penelitian\Pak Chindra\irigasi_ai\.venv\Lib\site-packages\joblib\externals\loky\backend\resource_tracker.py"[0m, line [35m386[0m, in [35mmain[0m
+    del [31mcache[rtype][0m[1;31m[name][0m
+        [31m~~~~~~~~~~~~[0m[1;31m^^^^^^[0m
+[1;35mKeyError[0m: [35m'C:\\Users\\LENOVO\\AppData\\Local\\Temp\\joblib_memmapping_folder_33048_96f3c0e728cb459181d188b83a726efb_d6d7b303c8a1437ab774e8ab83842cb0'[0m
+Traceback (most recent call last):
+  File [35m"D:\Dosen\2025 Genap\Penelitian\Pak Chindra\irigasi_ai\.venv\Lib\site-packages\joblib\externals\loky\backend\resource_tracker.py"[0m, line [35m386[0m, in [35mmain[0m
+    del [31mcache[rtype][0m[1;31m[name][0m
+        [31m~~~~~~~~~~~~[0m[1;31m^^^^^^[0m
+[1;35mKeyError[0m: [35m'C:\\Users\\LENOVO\\AppData\\Local\\Temp\\joblib_memmapping_folder_33048_ee418addb28047778d40e1d9ee541b1a_a7aa5435644f45c6b37db33853cc39f1'[0m
+Traceback (most recent call last):
+  File [35m"D:\Dosen\2025 Genap\Penelitian\Pak Chindra\irigasi_ai\.venv\Lib\site-packages\joblib\externals\loky\backend\resource_tracker.py"[0m, line [35m386[0m, in [35mmain[0m
+    del [31mcache[rtype][0m[1;31m[name][0m
+        [31m~~~~~~~~~~~~[0m[1;31m^^^^^^[0m
+[1;35mKeyError[0m: [35m'C:\\Users\\LENOVO\\AppData\\Local\\Temp\\joblib_memmapping_folder_33048_8f8450f420cc431a91cbd886069a080b_8883ac462576467788e66c5bfe1ac815'[0m
+Traceback (most recent call last):
+  File [35m"D:\Dosen\2025 Genap\Penelitian\Pak Chindra\irigasi_ai\.venv\Lib\site-packages\joblib\externals\loky\backend\resource_tracker.py"[0m, line [35m386[0m, in [35mmain[0m
+    del [31mcache[rtype][0m[1;31m[name][0m
+        [31m~~~~~~~~~~~~[0m[1;31m^^^^^^[0m
+[1;35mKeyError[0m: [35m'C:\\Users\\LENOVO\\AppData\\Local\\Temp\\joblib_memmapping_folder_33048_b68af23caae64de59e73ffb4403fdb93_13eb0566715c4e3cbf429024753ea67c'[0m
+Traceback (most recent call last):
+  File [35m"D:\Dosen\2025 Genap\Penelitian\Pak Chindra\irigasi_ai\.venv\Lib\site-packages\joblib\externals\loky\backend\resource_tracker.py"[0m, line [35m386[0m, in [35mmain[0m
+    del [31mcache[rtype][0m[1;31m[name][0m
+        [31m~~~~~~~~~~~~[0m[1;31m^^^^^^[0m
+[1;35mKeyError[0m: [35m'C:\\Users\\LENOVO\\AppData\\Local\\Temp\\joblib_memmapping_folder_33048_7df0b3de303e430880d8f6350c70626b_ac12a64584e44b02967aab8289e3c03f'[0m
+[NbConvertApp] Writing 54994 bytes to 04r_xgboost_lightgbm.ipynb
+selesai 0
