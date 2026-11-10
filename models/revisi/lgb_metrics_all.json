@@ -26,8 +26,8 @@
       "R2": 0.9418224659797942,
       "MAPE": 3.038657977600834
     },
-    "model_size_mb": 0.481777,
-    "waktu_latih_detik": 1530.382902622223
+    "model_size_mb": 0.481779,
+    "waktu_latih_detik": 648.0820801258087
   },
   "180m": {
     "best_params": {
@@ -56,8 +56,8 @@
       "R2": 0.8678496735505429,
       "MAPE": 4.822174201118848
     },
-    "model_size_mb": 0.387633,
-    "waktu_latih_detik": 6551.107872962952
+    "model_size_mb": 0.387634,
+    "waktu_latih_detik": 750.0050666332245
   },
   "360m": {
     "best_params": {
@@ -86,7 +86,7 @@
       "R2": 0.7345364617043765,
       "MAPE": 8.215606741038991
     },
-    "model_size_mb": 0.233952,
-    "waktu_latih_detik": 7198.890753984451
+    "model_size_mb": 0.233956,
+    "waktu_latih_detik": 717.6926326751709
   }
 }

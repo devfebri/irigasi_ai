@@ -1,0 +1,967 @@
+{
+  "tabel_perbandingan": [
+    {
+      "Horizon": "60m",
+      "Model": "Random Forest",
+      "MAE(%)": 1.6892,
+      "RMSE(%)": 2.7734,
+      "R2": 0.9567,
+      "MAPE(%)": 2.67
+    },
+    {
+      "Horizon": "60m",
+      "Model": "XGBoost",
+      "MAE(%)": 1.7004,
+      "RMSE(%)": 2.9715,
+      "R2": 0.9503,
+      "MAPE(%)": 2.71
+    },
+    {
+      "Horizon": "60m",
+      "Model": "LightGBM",
+      "MAE(%)": 1.9273,
+      "RMSE(%)": 3.2651,
+      "R2": 0.94,
+      "MAPE(%)": 3.05
+    },
+    {
+      "Horizon": "60m",
+      "Model": "Persistensi",
+      "MAE(%)": 1.3807,
+      "RMSE(%)": 2.9678,
+      "R2": 0.9504,
+      "MAPE(%)": 2.27
+    },
+    {
+      "Horizon": "180m",
+      "Model": "Random Forest",
+      "MAE(%)": 2.7605,
+      "RMSE(%)": 4.2282,
+      "R2": 0.9004,
+      "MAPE(%)": 4.45
+    },
+    {
+      "Horizon": "180m",
+      "Model": "XGBoost",
+      "MAE(%)": 3.866,
+      "RMSE(%)": 6.6401,
+      "R2": 0.7543,
+      "MAPE(%)": 6.76
+    },
+    {
+      "Horizon": "180m",
+      "Model": "LightGBM",
+      "MAE(%)": 3.6878,
+      "RMSE(%)": 5.7114,
+      "R2": 0.8183,
+      "MAPE(%)": 6.06
+    },
+    {
+      "Horizon": "180m",
+      "Model": "Persistensi",
+      "MAE(%)": 2.2738,
+      "RMSE(%)": 4.0806,
+      "R2": 0.9072,
+      "MAPE(%)": 3.79
+    },
+    {
+      "Horizon": "360m",
+      "Model": "Random Forest",
+      "MAE(%)": 3.9808,
+      "RMSE(%)": 5.3384,
+      "R2": 0.8438,
+      "MAPE(%)": 6.44
+    },
+    {
+      "Horizon": "360m",
+      "Model": "XGBoost",
+      "MAE(%)": 4.5209,
+      "RMSE(%)": 6.2217,
+      "R2": 0.7878,
+      "MAPE(%)": 7.05
+    },
+    {
+      "Horizon": "360m",
+      "Model": "LightGBM",
+      "MAE(%)": 5.1538,
+      "RMSE(%)": 7.0981,
+      "R2": 0.7238,
+      "MAPE(%)": 8.04
+    },
+    {
+      "Horizon": "360m",
+      "Model": "Persistensi",
+      "MAE(%)": 3.3305,
+      "RMSE(%)": 5.2027,
+      "R2": 0.8516,
+      "MAPE(%)": 5.66
+    }
+  ],
+  "model_terbaik_per_horizon": {
+    "60m": "Random Forest",
+    "180m": "Random Forest",
+    "360m": "Random Forest"
+  },
+  "model_vs_persistensi_rmse_persen": {
+    "60m": {
+      "Random Forest": -6.55,
+      "XGBoost": 0.12,
+      "LightGBM": 10.02
+    },
+    "180m": {
+      "Random Forest": 3.62,
+      "XGBoost": 62.72,
+      "LightGBM": 39.96
+    },
+    "360m": {
+      "Random Forest": 2.61,
+      "XGBoost": 19.59,
+      "LightGBM": 36.43
+    }
+  },
+  "status_irigasi_dasar": {
+    "model": "Random Forest",
+    "akurasi": 0.8950482564624861,
+    "n": 20619,
+    "confusion_matrix": [
+      [
+        6785,
+        32,
+        7,
+        0,
+        0
+      ],
+      [
+        9,
+        4320,
+        595,
+        4,
+        0
+      ],
+      [
+        5,
+        432,
+        6585,
+        830,
+        0
+      ],
+      [
+        2,
+        54,
+        186,
+        765,
+        0
+      ],
+      [
+        3,
+        0,
+        5,
+        0,
+        0
+      ]
+    ],
+    "labels": [
+      "KRITIS",
+      "WASPADA",
+      "OPTIMAL",
+      "LEMBAB",
+      "JENUH"
+    ],
+    "per_kelas": {
+      "KRITIS": {
+        "precision": 0.9972075249853027,
+        "recall": 0.9942848769050411,
+        "f1": 0.9957440563545641,
+        "support_aktual": 6824.0,
+        "jumlah_diprediksi": 6804.0
+      },
+      "WASPADA": {
+        "precision": 0.8929309632079372,
+        "recall": 0.8766233766233766,
+        "f1": 0.8847020274421462,
+        "support_aktual": 4928.0,
+        "jumlah_diprediksi": 4838.0
+      },
+      "OPTIMAL": {
+        "precision": 0.8925182976416373,
+        "recall": 0.8386398369842079,
+        "f1": 0.8647406434668418,
+        "support_aktual": 7852.0,
+        "jumlah_diprediksi": 7378.0
+      },
+      "LEMBAB": {
+        "precision": 0.47842401500938087,
+        "recall": 0.759682224428997,
+        "f1": 0.5871066768994628,
+        "support_aktual": 1007.0,
+        "jumlah_diprediksi": 1599.0
+      },
+      "JENUH": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "support_aktual": 8.0,
+        "jumlah_diprediksi": 0.0
+      }
+    },
+    "distribusi_aktual": {
+      "KRITIS": 6824,
+      "WASPADA": 4928,
+      "OPTIMAL": 7852,
+      "LEMBAB": 1007,
+      "JENUH": 8
+    }
+  },
+  "status_irigasi_dasar_baris_gabungan": {
+    "akurasi": 0.892587525966459,
+    "n": 19737,
+    "confusion_matrix": [
+      [
+        6501,
+        31,
+        7,
+        0,
+        0
+      ],
+      [
+        9,
+        4026,
+        592,
+        4,
+        0
+      ],
+      [
+        5,
+        429,
+        6325,
+        803,
+        0
+      ],
+      [
+        2,
+        54,
+        176,
+        765,
+        0
+      ],
+      [
+        3,
+        0,
+        5,
+        0,
+        0
+      ]
+    ],
+    "labels": [
+      "KRITIS",
+      "WASPADA",
+      "OPTIMAL",
+      "LEMBAB",
+      "JENUH"
+    ],
+    "per_kelas": {
+      "KRITIS": {
+        "precision": 0.9970858895705521,
+        "recall": 0.9941887138706225,
+        "f1": 0.9956351941189984,
+        "support_aktual": 6539.0,
+        "jumlah_diprediksi": 6520.0
+      },
+      "WASPADA": {
+        "precision": 0.886784140969163,
+        "recall": 0.8693586698337292,
+        "f1": 0.877984952567877,
+        "support_aktual": 4631.0,
+        "jumlah_diprediksi": 4540.0
+      },
+      "OPTIMAL": {
+        "precision": 0.8902181562280085,
+        "recall": 0.8364189367892092,
+        "f1": 0.8624803981727688,
+        "support_aktual": 7562.0,
+        "jumlah_diprediksi": 7105.0
+      },
+      "LEMBAB": {
+        "precision": 0.4866412213740458,
+        "recall": 0.7673019057171514,
+        "f1": 0.5955624756714675,
+        "support_aktual": 997.0,
+        "jumlah_diprediksi": 1572.0
+      },
+      "JENUH": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "support_aktual": 8.0,
+        "jumlah_diprediksi": 0.0
+      }
+    }
+  },
+  "status_irigasi_peringatan_dini": {
+    "akurasi": 0.8813902822110756,
+    "n": 19737,
+    "confusion_matrix": [
+      [
+        6501,
+        33,
+        5,
+        0,
+        0
+      ],
+      [
+        9,
+        4263,
+        355,
+        4,
+        0
+      ],
+      [
+        5,
+        887,
+        5867,
+        803,
+        0
+      ],
+      [
+        2,
+        55,
+        175,
+        765,
+        0
+      ],
+      [
+        3,
+        0,
+        5,
+        0,
+        0
+      ]
+    ],
+    "labels": [
+      "KRITIS",
+      "WASPADA",
+      "OPTIMAL",
+      "LEMBAB",
+      "JENUH"
+    ],
+    "per_kelas": {
+      "KRITIS": {
+        "precision": 0.9970858895705521,
+        "recall": 0.9941887138706225,
+        "f1": 0.9956351941189984,
+        "support_aktual": 6539.0,
+        "jumlah_diprediksi": 6520.0
+      },
+      "WASPADA": {
+        "precision": 0.8138602520045819,
+        "recall": 0.9205355214856402,
+        "f1": 0.8639173168507448,
+        "support_aktual": 4631.0,
+        "jumlah_diprediksi": 5238.0
+      },
+      "OPTIMAL": {
+        "precision": 0.9157171843296394,
+        "recall": 0.7758529489553029,
+        "f1": 0.8400028634834276,
+        "support_aktual": 7562.0,
+        "jumlah_diprediksi": 6407.0
+      },
+      "LEMBAB": {
+        "precision": 0.4866412213740458,
+        "recall": 0.7673019057171514,
+        "f1": 0.5955624756714675,
+        "support_aktual": 997.0,
+        "jumlah_diprediksi": 1572.0
+      },
+      "JENUH": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "support_aktual": 8.0,
+        "jumlah_diprediksi": 0.0
+      }
+    },
+    "baris_dinaikkan_ke_waspada": 698
+  },
+  "kejadian_transisi": {
+    "parameter": {
+      "bertahan_menit": 30,
+      "jendela_peringatan_menit": 120,
+      "tenggang_maks_dihitung_menit": 360
+    },
+    "turun_melewati_70 (target status WASPADA/KRITIS)": {
+      "jumlah_kejadian": 42,
+      "aturan_dasar": {
+        "terdeteksi_aktif_sampai_transisi": 29,
+        "persen_terdeteksi": 69.04761904761905,
+        "median_tenggang_menit": 135.0,
+        "rata2_tenggang_menit": 162.73793103448278,
+        "min_tenggang_menit": 1.0333333333333334,
+        "maks_tenggang_menit": 359.5833333333333,
+        "pernah_ada_peringatan_dalam_jendela": 41,
+        "persen_pernah_ada_peringatan": 97.61904761904762
+      },
+      "peringatan_dini": {
+        "terdeteksi_aktif_sampai_transisi": 31,
+        "persen_terdeteksi": 73.80952380952381,
+        "median_tenggang_menit": 168.11666666666667,
+        "rata2_tenggang_menit": 184.28494623655916,
+        "min_tenggang_menit": 1.0,
+        "maks_tenggang_menit": 359.5833333333333,
+        "pernah_ada_peringatan_dalam_jendela": 42,
+        "persen_pernah_ada_peringatan": 100.0
+      }
+    },
+    "turun_melewati_60 (target status KRITIS)": {
+      "jumlah_kejadian": 13,
+      "aturan_dasar": {
+        "terdeteksi_aktif_sampai_transisi": 12,
+        "persen_terdeteksi": 92.3076923076923,
+        "median_tenggang_menit": 292.0333333333333,
+        "rata2_tenggang_menit": 240.1430555555556,
+        "min_tenggang_menit": 25.016666666666666,
+        "maks_tenggang_menit": 359.18333333333334,
+        "pernah_ada_peringatan_dalam_jendela": 13,
+        "persen_pernah_ada_peringatan": 100.0
+      },
+      "peringatan_dini": {
+        "terdeteksi_aktif_sampai_transisi": 12,
+        "persen_terdeteksi": 92.3076923076923,
+        "median_tenggang_menit": 292.0333333333333,
+        "rata2_tenggang_menit": 240.1430555555556,
+        "min_tenggang_menit": 25.016666666666666,
+        "maks_tenggang_menit": 359.18333333333334,
+        "pernah_ada_peringatan_dalam_jendela": 13,
+        "persen_pernah_ada_peringatan": 100.0
+      }
+    }
+  },
+  "sensitivitas_node3": {
+    "60m": {
+      "rf_3node": {
+        "MAE": 1.5077966563920424,
+        "RMSE": 2.8961656354829914,
+        "R2": 0.979999251010542
+      },
+      "persistensi_3node": {
+        "MAE": 1.3875390012448066,
+        "RMSE": 3.4782745157275436,
+        "R2": 0.9711512382596408
+      },
+      "rf_2node": {
+        "MAE": 1.6892040432717812,
+        "RMSE": 2.773368477313323,
+        "R2": 0.9567154441444501
+      },
+      "persistensi_2node": {
+        "MAE": 1.3806683156312138,
+        "RMSE": 2.967789477515339,
+        "R2": 0.9504339857966135
+      },
+      "n_fitur_3node": 83,
+      "n_test_3node": 20619
+    },
+    "180m": {
+      "rf_3node": {
+        "MAE": 2.4684958961651486,
+        "RMSE": 4.062461288042521,
+        "R2": 0.9608958392173256
+      },
+      "persistensi_3node": {
+        "MAE": 2.0513415256049616,
+        "RMSE": 4.0431054871315375,
+        "R2": 0.9612675789935575
+      },
+      "rf_2node": {
+        "MAE": 2.7605374061532078,
+        "RMSE": 4.228177673178219,
+        "R2": 0.9003959306800511
+      },
+      "persistensi_2node": {
+        "MAE": 2.273774860583329,
+        "RMSE": 4.080606239669001,
+        "R2": 0.9072273412143341
+      },
+      "n_fitur_3node": 83,
+      "n_test_3node": 20263
+    },
+    "360m": {
+      "rf_3node": {
+        "MAE": 3.6852385330651383,
+        "RMSE": 4.908186470161509,
+        "R2": 0.9436220025365428
+      },
+      "persistensi_3node": {
+        "MAE": 2.8722151952103885,
+        "RMSE": 4.786203481574984,
+        "R2": 0.9463895003871565
+      },
+      "rf_2node": {
+        "MAE": 3.9807505688843783,
+        "RMSE": 5.338351966536557,
+        "R2": 0.8437907816974346
+      },
+      "persistensi_2node": {
+        "MAE": 3.3304578800910702,
+        "RMSE": 5.202743783699733,
+        "R2": 0.8516262310094713
+      },
+      "n_fitur_3node": 83,
+      "n_test_3node": 19765
+    }
+  },
+  "pembersihan_data": {
+    "baris_awal": 120145,
+    "batas_waktu_data": "2026-10-19 08:50:06",
+    "dibuang_timestamp_invalid": 0,
+    "dibuang_duplikat": 0,
+    "dibuang_semua_sensor_tanah_nol": 1656,
+    "invalid_dan_nan_tersisa_per_kolom": {
+      "kelembaban_tanah_1": {
+        "invalid": 0,
+        "nan_tersisa": 0
+      },
+      "kelembaban_tanah_2": {
+        "invalid": 6444,
+        "nan_tersisa": 6440
+      },
+      "kelembaban_tanah_3": {
+        "invalid": 8137,
+        "nan_tersisa": 8137
+      },
+      "tekanan_udara_1": {
+        "invalid": 0,
+        "nan_tersisa": 0
+      },
+      "tekanan_udara_2": {
+        "invalid": 6444,
+        "nan_tersisa": 6440
+      },
+      "tekanan_udara_3": {
+        "invalid": 8137,
+        "nan_tersisa": 8137
+      },
+      "kelembaban_udara_1": {
+        "invalid": 0,
+        "nan_tersisa": 0
+      },
+      "kelembaban_udara_2": {
+        "invalid": 6444,
+        "nan_tersisa": 6440
+      },
+      "kelembaban_udara_3": {
+        "invalid": 8137,
+        "nan_tersisa": 8137
+      },
+      "suhu_udara_1": {
+        "invalid": 0,
+        "nan_tersisa": 0
+      },
+      "suhu_udara_2": {
+        "invalid": 6444,
+        "nan_tersisa": 6440
+      },
+      "suhu_udara_3": {
+        "invalid": 8137,
+        "nan_tersisa": 8137
+      }
+    },
+    "outlier_aturan_lama": {
+      "kelembaban_tanah_1": {
+        "batas_bawah": 0.0,
+        "batas_atas": 100.0,
+        "jumlah_outlier": 0
+      },
+      "kelembaban_tanah_2": {
+        "batas_bawah": 0.0,
+        "batas_atas": 100.0,
+        "jumlah_outlier": 0
+      },
+      "kelembaban_tanah_3": {
+        "batas_bawah": 0.0,
+        "batas_atas": 100.0,
+        "jumlah_outlier": 0
+      }
+    },
+    "outlier_mode": "keep",
+    "baris_dibuang_kekosongan_panjang": {
+      "node1_kt_nan": 0,
+      "node2_kt_nan": 6440,
+      "hanya_kolom_lain_nan": 0,
+      "total_dibuang": 6440
+    },
+    "baris_valid": 112049,
+    "jumlah_segmen": 40,
+    "jumlah_segmen_ge_24jam": 8,
+    "persen_data_di_segmen_ge_24jam": 90.89505484207801,
+    "celah_terpanjang": {
+      "durasi": "13 days 13:33:23",
+      "dari": "2026-07-27 01:14:25",
+      "sampai": "2026-08-09 14:47:48"
+    },
+    "dua_deret_utama": [
+      {
+        "nama": "sebelum celah terpanjang",
+        "awal": "2026-07-10 11:16:24",
+        "akhir": "2026-07-27 01:14:25",
+        "baris": 20852
+      },
+      {
+        "nama": "sesudah celah terpanjang",
+        "awal": "2026-08-09 14:47:48",
+        "akhir": "2026-10-19 08:50:06",
+        "baris": 91197
+      }
+    ],
+    "periode_awal": "2026-07-10 11:16:24",
+    "periode_akhir": "2026-10-19 08:50:06",
+    "qc_node3": {
+      "node1": {
+        "jumlah_nol_mentah": 1656,
+        "lonjakan_abs_diff_gt20_mentah": 114,
+        "lonjakan_abs_diff_gt20_setelah_cleaning": 114,
+        "persen_waktu_ge_99_sejak_30sep": 21.004039238315062,
+        "n_sejak_30sep": 25995
+      },
+      "node2": {
+        "jumlah_nol_mentah": 8100,
+        "lonjakan_abs_diff_gt20_mentah": 352,
+        "lonjakan_abs_diff_gt20_setelah_cleaning": 324,
+        "persen_waktu_ge_99_sejak_30sep": 0.013537906137184115,
+        "n_sejak_30sep": 22160
+      },
+      "node3": {
+        "jumlah_nol_mentah": 9793,
+        "lonjakan_abs_diff_gt20_mentah": 1302,
+        "lonjakan_abs_diff_gt20_setelah_cleaning": 1300,
+        "persen_waktu_ge_99_sejak_30sep": 64.22064777327935,
+        "n_sejak_30sep": 21736
+      },
+      "node3_std_sejak_9okt": 1.5866338226756513,
+      "node3_mean_sejak_9okt": 99.68570647717955,
+      "modus_mentah": {
+        "node1": 100.0,
+        "node2": 0.0,
+        "node3": 100.0
+      }
+    },
+    "kolom_pemodelan": [
+      "kelembaban_tanah_1",
+      "kelembaban_tanah_2",
+      "kelembaban_udara_1",
+      "kelembaban_udara_2",
+      "suhu_udara_1",
+      "suhu_udara_2",
+      "tekanan_udara_1",
+      "tekanan_udara_2",
+      "curah_hujan"
+    ]
+  },
+  "feature_engineering": {
+    "jumlah_fitur": 73,
+    "kelompok_fitur": {
+      "mentah Node 1-2 + hujan": 9,
+      "waktu": 11,
+      "target saat ini (kt_avg)": 1,
+      "lag kt_avg": 8,
+      "lag per node": 6,
+      "lag udara/suhu/hujan": 9,
+      "rolling kt": 12,
+      "rolling hujan": 3,
+      "diff kt_avg": 4,
+      "EWM": 3,
+      "rata-rata node": 3,
+      "VPD": 3,
+      "selisih node": 1
+    },
+    "split_2node": {
+      "60m": {
+        "n_total": 103093,
+        "n_train": 82474,
+        "n_test": 20619,
+        "train_awal": "2026-07-10 17:16:26",
+        "train_akhir": "2026-09-30 03:53:10",
+        "test_awal": "2026-09-30 03:54:10",
+        "test_akhir": "2026-10-19 07:52:06",
+        "segmen_test": [
+          34,
+          38,
+          39
+        ]
+      },
+      "180m": {
+        "n_total": 101315,
+        "n_train": 81052,
+        "n_test": 20263,
+        "train_awal": "2026-07-10 17:16:26",
+        "train_akhir": "2026-09-30 03:59:10",
+        "test_awal": "2026-09-30 04:00:10",
+        "test_akhir": "2026-10-19 05:52:05",
+        "segmen_test": [
+          34,
+          38,
+          39
+        ]
+      },
+      "360m": {
+        "n_total": 98824,
+        "n_train": 79059,
+        "n_test": 19765,
+        "train_awal": "2026-07-10 17:16:26",
+        "train_akhir": "2026-09-30 03:31:10",
+        "test_awal": "2026-09-30 03:32:10",
+        "test_akhir": "2026-10-19 02:51:47",
+        "segmen_test": [
+          34,
+          38,
+          39
+        ]
+      }
+    },
+    "jumlah_fitur_sens3": 83,
+    "split_sens3": {
+      "60m": {
+        "n_total": 103093,
+        "n_train": 82474,
+        "n_test": 20619,
+        "train_awal": "2026-07-10 17:16:26",
+        "train_akhir": "2026-09-30 03:53:10",
+        "test_awal": "2026-09-30 03:54:10",
+        "test_akhir": "2026-10-19 07:52:06",
+        "segmen_test": [
+          26,
+          27,
+          28
+        ]
+      },
+      "180m": {
+        "n_total": 101315,
+        "n_train": 81052,
+        "n_test": 20263,
+        "train_awal": "2026-07-10 17:16:26",
+        "train_akhir": "2026-09-30 03:59:10",
+        "test_awal": "2026-09-30 04:00:10",
+        "test_akhir": "2026-10-19 05:52:05",
+        "segmen_test": [
+          26,
+          27,
+          28
+        ]
+      },
+      "360m": {
+        "n_total": 98824,
+        "n_train": 79059,
+        "n_test": 19765,
+        "train_awal": "2026-07-10 17:16:26",
+        "train_akhir": "2026-09-30 03:31:10",
+        "test_awal": "2026-09-30 03:32:10",
+        "test_akhir": "2026-10-19 02:51:47",
+        "segmen_test": [
+          26,
+          27,
+          28
+        ]
+      }
+    },
+    "baris_sens3_valid": 110352,
+    "segmen_sens3": 29
+  },
+  "hiperparameter_dan_cv": {
+    "rf": {
+      "60m": {
+        "best_params": {
+          "max_depth": 13,
+          "max_features": "log2",
+          "min_samples_leaf": 20,
+          "min_samples_split": 16,
+          "n_estimators": 100
+        },
+        "cv_rmse": 7.1390881373518775,
+        "oob_score": 0.9884855822087129
+      },
+      "180m": {
+        "best_params": {
+          "max_depth": 16,
+          "max_features": "sqrt",
+          "min_samples_leaf": 15,
+          "min_samples_split": 15,
+          "n_estimators": 121
+        },
+        "cv_rmse": 9.052923526892668,
+        "oob_score": 0.9898564443281767
+      },
+      "360m": {
+        "best_params": {
+          "max_depth": 13,
+          "max_features": "log2",
+          "min_samples_leaf": 20,
+          "min_samples_split": 16,
+          "n_estimators": 100
+        },
+        "cv_rmse": 10.884176963654605,
+        "oob_score": 0.9879862715105888
+      }
+    },
+    "xgb": {
+      "60m": {
+        "best_params": {
+          "colsample_bytree": 0.9895022075365837,
+          "gamma": 0.11638567021515211,
+          "learning_rate": 0.022684900834594915,
+          "max_depth": 9,
+          "min_child_weight": 5,
+          "n_estimators": 563,
+          "reg_alpha": 0.2571172192068058,
+          "reg_lambda": 1.684829137724085,
+          "subsample": 0.6185801650879991
+        },
+        "cv_rmse": 8.298481464385986,
+        "n_estimators": 563
+      },
+      "180m": {
+        "best_params": {
+          "colsample_bytree": 0.8159364365206693,
+          "gamma": 0.1015306123673847,
+          "learning_rate": 0.14199949987811736,
+          "max_depth": 10,
+          "min_child_weight": 5,
+          "n_estimators": 442,
+          "reg_alpha": 0.08061064362700221,
+          "reg_lambda": 2.359395304685146,
+          "subsample": 0.9232481518257668
+        },
+        "cv_rmse": 10.929029623667398,
+        "n_estimators": 442
+      },
+      "360m": {
+        "best_params": {
+          "colsample_bytree": 0.6697465716019966,
+          "gamma": 0.345468869051233,
+          "learning_rate": 0.06414294848207525,
+          "max_depth": 5,
+          "min_child_weight": 10,
+          "n_estimators": 328,
+          "reg_alpha": 0.33784505851964036,
+          "reg_lambda": 1.9704322384815443,
+          "subsample": 0.6836286482950855
+        },
+        "cv_rmse": 13.93994172414144,
+        "n_estimators": 328
+      }
+    },
+    "lgb": {
+      "60m": {
+        "best_params": {
+          "colsample_bytree": 0.6186662652854461,
+          "learning_rate": 0.1463257726378043,
+          "max_depth": 10,
+          "min_child_samples": 12,
+          "n_estimators": 506,
+          "num_leaves": 26,
+          "reg_alpha": 0.08526206184364576,
+          "reg_lambda": 0.630103185970559,
+          "subsample": 0.9795542149013333
+        },
+        "cv_rmse": 7.3943617643524275,
+        "n_estimators": 506
+      },
+      "180m": {
+        "best_params": {
+          "colsample_bytree": 0.996884623716487,
+          "learning_rate": 0.09644741134788032,
+          "max_depth": 5,
+          "min_child_samples": 31,
+          "n_estimators": 452,
+          "num_leaves": 63,
+          "reg_alpha": 0.011531212520707879,
+          "reg_lambda": 1.5495493205167783,
+          "subsample": 0.7599443886861021
+        },
+        "cv_rmse": 10.904367352271732,
+        "n_estimators": 452
+      },
+      "360m": {
+        "best_params": {
+          "colsample_bytree": 0.6806876809341584,
+          "learning_rate": 0.13540690339429273,
+          "max_depth": 4,
+          "min_child_samples": 41,
+          "n_estimators": 587,
+          "num_leaves": 49,
+          "reg_alpha": 0.06966572720293784,
+          "reg_lambda": 1.7088347585556345,
+          "subsample": 0.8159364365206693
+        },
+        "cv_rmse": 12.291042480847276,
+        "n_estimators": 587
+      }
+    }
+  },
+  "metrik_train": {
+    "Random Forest": {
+      "60m": {
+        "MAE": 0.7130218726418407,
+        "RMSE": 1.793595508054606,
+        "R2": 0.9900870586654713,
+        "MAPE": 1.1322711962625853
+      },
+      "180m": {
+        "MAE": 0.6653986886598906,
+        "RMSE": 1.6425225858100598,
+        "R2": 0.9916603815850433,
+        "MAPE": 1.061207487965947
+      },
+      "360m": {
+        "MAE": 0.8651289345271495,
+        "RMSE": 1.834684276080882,
+        "R2": 0.9895909835610965,
+        "MAPE": 1.3931067852871126
+      }
+    },
+    "XGBoost": {
+      "60m": {
+        "MAE": 0.564288469106389,
+        "RMSE": 1.2860352055802338,
+        "R2": 0.9949036501176552,
+        "MAPE": 0.9094332264242418
+      },
+      "180m": {
+        "MAE": 0.3643826554006646,
+        "RMSE": 0.7281754256121609,
+        "R2": 0.9983609374930592,
+        "MAPE": 0.5794464162640525
+      },
+      "360m": {
+        "MAE": 0.8858176971450216,
+        "RMSE": 1.6850822296978372,
+        "R2": 0.9912192984914031,
+        "MAPE": 1.4165930767327906
+      }
+    },
+    "LightGBM": {
+      "60m": {
+        "MAE": 0.598860587065094,
+        "RMSE": 1.2970156988188202,
+        "R2": 0.9948162507411172,
+        "MAPE": 0.9605903406183528
+      },
+      "180m": {
+        "MAE": 0.7083928833149788,
+        "RMSE": 1.5123468805599976,
+        "R2": 0.9929298877479337,
+        "MAPE": 1.131978304669044
+      },
+      "360m": {
+        "MAE": 0.7925066552738756,
+        "RMSE": 1.579082379208688,
+        "R2": 0.9922892505557731,
+        "MAPE": 1.267838572579484
+      }
+    }
+  },
+  "catatan_metodologi": {
+    "early_stopping": "XGBoost/LightGBM: early stopping dihilangkan; n_estimators dari pencarian hiperparameter (TimeSeriesSplit), model final dilatih pada seluruh data latih; data uji tidak dipakai saat pelatihan.",
+    "node3": "Node 3 dikeluarkan dari target dan fitur; sensitivitas pada dataset 3 node.",
+    "segmentasi": "Selisih waktu > 10 menit = segmen baru; semua lag/rolling/EWM/diff per segmen; target via merge_asof (toleransi 2 menit) dan NaN bila beda segmen."
+  }
+}
