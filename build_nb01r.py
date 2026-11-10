@@ -20,6 +20,7 @@ md("""
 - **E1 – celah waktu.** Interpolasi linear untuk kekosongan panjang (hingga 72 jam) diganti interpolasi hanya untuk kekosongan <=10 baris (`limit_area='inside'`, tanpa `bfill/ffill`). Kekosongan lebih panjang dibiarkan NaN, barisnya dibuang, dan data dipecah menjadi **segmen** (selisih waktu >10 menit = segmen baru) agar model tidak mempelajari garis lurus buatan.
 - **E2 – Node 3 anomali.** Node 3 dikeluarkan dari target dan fitur. Datanya disimpan terpisah (`data_node3_qc.csv`) hanya untuk uji sensitivitas, disertai sel QC.
 - Bacaan 0 pada suhu dan kelembaban udara kini dianggap gagal baca (NaN).
+- Bacaan kelembaban tanah < 10% (termasuk 0) dianggap gagal baca (NaN), karena hanya muncul di tepi celah data saat sensor baru menyala atau koneksi putus.
 - Data dibatasi sampai `waktu_pembacaan <= 2026-10-19 08:50:06` (periode naskah).
 - Kredensial DB dibaca dari `.env`. Database hanya dibaca (SELECT).
 """)
@@ -158,9 +159,13 @@ def bersihkan(col, mask_invalid):
 code("""
 # -- CELL 6f-6h: nol/invalid -> NaN, interpolasi pendek -----------
 rin = {}
-# 6f. nol pada kelembaban tanah
+# 6f. kelembaban tanah < 10% dianggap gagal baca (termasuk 0).
+#     Tanah gambut di lokasi tidak pernah sekering ini; bacaan < 10% muncul
+#     hanya di tepi celah data (sensor baru menyala / koneksi putus).
+BATAS_MIN_KT = 10
 for c in kt_cols:
-    rin[c] = bersihkan(c, df[c] == 0)
+    rin[c] = bersihkan(c, df[c] < BATAS_MIN_KT)
+LAPORAN['batas_min_kelembaban_tanah'] = BATAS_MIN_KT
 # 6g. tekanan di luar 800-1100 hPa
 for c in ['tekanan_udara_1','tekanan_udara_2','tekanan_udara_3']:
     rin[c] = bersihkan(c, (df[c] < 800) | (df[c] > 1100))

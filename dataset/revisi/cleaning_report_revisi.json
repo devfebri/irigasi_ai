@@ -4,18 +4,19 @@
   "dibuang_timestamp_invalid": 0,
   "dibuang_duplikat": 0,
   "dibuang_semua_sensor_tanah_nol": 1656,
+  "batas_min_kelembaban_tanah": 10,
   "invalid_dan_nan_tersisa_per_kolom": {
     "kelembaban_tanah_1": {
-      "invalid": 0,
-      "nan_tersisa": 0
+      "invalid": 78,
+      "nan_tersisa": 67
     },
     "kelembaban_tanah_2": {
-      "invalid": 6444,
-      "nan_tersisa": 6440
+      "invalid": 6492,
+      "nan_tersisa": 6463
     },
     "kelembaban_tanah_3": {
-      "invalid": 8137,
-      "nan_tersisa": 8137
+      "invalid": 8372,
+      "nan_tersisa": 8200
     },
     "tekanan_udara_1": {
       "invalid": 0,
@@ -73,15 +74,15 @@
   },
   "outlier_mode": "keep",
   "baris_dibuang_kekosongan_panjang": {
-    "node1_kt_nan": 0,
-    "node2_kt_nan": 6440,
+    "node1_kt_nan": 67,
+    "node2_kt_nan": 6463,
     "hanya_kolom_lain_nan": 0,
-    "total_dibuang": 6440
+    "total_dibuang": 6513
   },
-  "baris_valid": 112049,
-  "jumlah_segmen": 40,
+  "baris_valid": 111976,
+  "jumlah_segmen": 38,
   "jumlah_segmen_ge_24jam": 8,
-  "persen_data_di_segmen_ge_24jam": 90.89505484207801,
+  "persen_data_di_segmen_ge_24jam": 90.9525255411874,
   "celah_terpanjang": {
     "durasi": "13 days 13:33:23",
     "dari": "2026-07-27 01:14:25",
@@ -92,13 +93,13 @@
       "nama": "sebelum celah terpanjang",
       "awal": "2026-07-10 11:16:24",
       "akhir": "2026-07-27 01:14:25",
-      "baris": 20852
+      "baris": 20835
     },
     {
       "nama": "sesudah celah terpanjang",
       "awal": "2026-08-09 14:47:48",
       "akhir": "2026-10-19 08:50:06",
-      "baris": 91197
+      "baris": 91141
     }
   ],
   "periode_awal": "2026-07-10 11:16:24",
@@ -107,21 +108,21 @@
     "node1": {
       "jumlah_nol_mentah": 1656,
       "lonjakan_abs_diff_gt20_mentah": 114,
-      "lonjakan_abs_diff_gt20_setelah_cleaning": 114,
+      "lonjakan_abs_diff_gt20_setelah_cleaning": 107,
       "persen_waktu_ge_99_sejak_30sep": 21.004039238315062,
       "n_sejak_30sep": 25995
     },
     "node2": {
       "jumlah_nol_mentah": 8100,
       "lonjakan_abs_diff_gt20_mentah": 352,
-      "lonjakan_abs_diff_gt20_setelah_cleaning": 324,
+      "lonjakan_abs_diff_gt20_setelah_cleaning": 301,
       "persen_waktu_ge_99_sejak_30sep": 0.013537906137184115,
       "n_sejak_30sep": 22160
     },
     "node3": {
       "jumlah_nol_mentah": 9793,
       "lonjakan_abs_diff_gt20_mentah": 1302,
-      "lonjakan_abs_diff_gt20_setelah_cleaning": 1300,
+      "lonjakan_abs_diff_gt20_setelah_cleaning": 1206,
       "persen_waktu_ge_99_sejak_30sep": 64.22064777327935,
       "n_sejak_30sep": 21736
     },
